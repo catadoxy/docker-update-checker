@@ -4,9 +4,11 @@ This guide explains how to configure how often the Docker Update Checker scans f
 
 ## 📝 Overview
 
-By default, the app checks for updates every **5 minutes (300 seconds)**. You can customize this using the `CHECK_INTERVAL` environment variable.
+By default, the app checks for updates every **5 minutes (300 seconds)**. You can customize this using the `CHECK_INTERVAL` environment variable in your `docker-compose.yml` file.
 
 **Special value**: Set `CHECK_INTERVAL=0` to **disable auto-refresh** completely. The app will only check for updates when you manually click the "Refresh Status" button.
+
+**Installation**: This guide assumes you're using the Docker Hub image `catadoxy/docker-update-checker:latest`. If you're building from source, see Method 3 below.
 
 ## ⚙️ Configuration Methods
 
@@ -17,7 +19,7 @@ Edit your `docker-compose.yml` file:
 ```yaml
 services:
   docker-update-checker:
-    build: .
+    image: catadoxy/docker-update-checker:latest
     container_name: docker-update-checker
     ports:
       - "3456:3456"
@@ -66,32 +68,26 @@ docker run -d \
   -p 3456:3456 \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
   -e CHECK_INTERVAL=300 \
-  docker-update-checker
+  catadoxy/docker-update-checker:latest
 ```
 
-### Method 3: Direct Node.js (without Docker)
+### Method 3: Building from Source (Advanced)
 
-If running the Node.js app directly:
+If you're building from source instead of using the Docker Hub image:
 
 ```bash
-# Set environment variable before starting
-export CHECK_INTERVAL=300
-npm start
+git clone https://github.com/catadoxy/docker-update-checker.git
+cd docker-update-checker
 
-# Or in one line
-CHECK_INTERVAL=300 npm start
-```
+# Edit docker-compose.yml:
+# Change: image: catadoxy/docker-update-checker:latest
+# To: build: .
 
-**Windows (PowerShell):**
-```powershell
-$env:CHECK_INTERVAL=300
-npm start
-```
+# Then edit the environment variable:
+environment:
+  - CHECK_INTERVAL=300
 
-**Windows (Command Prompt):**
-```cmd
-set CHECK_INTERVAL=300
-npm start
+docker compose up -d
 ```
 
 ## 🔍 How It Works
@@ -157,6 +153,8 @@ docker compose logs
 
 # You should see:
 # ⏱️  Check interval: 300 seconds (5 minutes)
+# or
+# ⏱️  Auto-refresh: DISABLED (manual refresh only)
 ```
 
 ### Check the API:
@@ -168,15 +166,21 @@ curl http://localhost:3456/api/config
 # {
 #   "checkInterval": 300,
 #   "checkIntervalMs": 300000,
+#   "autoRefreshEnabled": true,
 #   "timestamp": "2024-02-16T12:00:00.000Z"
 # }
 ```
 
 ### Check the web interface:
 
-Open `docker-update-checker.html` in your browser. The header should show:
+Open the interface in your browser. The header should show:
 ```
 Auto-refresh: every 300 seconds (5.0 min)
+```
+
+Or if disabled:
+```
+Auto-refresh: DISABLED (manual only)
 ```
 
 ## 🎯 Real-World Examples
@@ -186,8 +190,18 @@ Auto-refresh: every 300 seconds (5.0 min)
 **Scenario**: Testing new image versions frequently
 
 ```yaml
-environment:
-  - CHECK_INTERVAL=60  # Check every minute
+services:
+  docker-update-checker:
+    image: catadoxy/docker-update-checker:latest
+    container_name: docker-update-checker
+    ports:
+      - "3456:3456"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - CHECK_INTERVAL=60  # Check every minute
 ```
 
 ### Example 2: Production (Balanced)
@@ -196,6 +210,7 @@ environment:
 
 ```yaml
 environment:
+  - NODE_ENV=production
   - CHECK_INTERVAL=300  # Check every 5 minutes
 ```
 
@@ -205,6 +220,7 @@ environment:
 
 ```yaml
 environment:
+  - NODE_ENV=production
   - CHECK_INTERVAL=1800  # Check every 30 minutes
 ```
 
@@ -214,6 +230,7 @@ environment:
 
 ```yaml
 environment:
+  - NODE_ENV=production
   - CHECK_INTERVAL=900  # Check every 15 minutes
 ```
 
@@ -223,6 +240,7 @@ environment:
 
 ```yaml
 environment:
+  - NODE_ENV=production
   - CHECK_INTERVAL=0  # Disable auto-refresh
 ```
 
@@ -237,9 +255,8 @@ Users must click "Refresh Status" to check for updates. Perfect for:
 
 **Solution**: Make sure to restart the container after changing the environment variable:
 ```bash
-docker compose restart
-# or
-docker compose down && docker compose up -d
+docker compose down
+docker compose up -d
 ```
 
 ### Issue: Rate limit errors in logs
