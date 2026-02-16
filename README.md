@@ -11,7 +11,7 @@ A modern, cyberpunk-themed web interface to monitor your Docker containers and c
 - 🆕 **Update detection** by comparing local images with Docker Hub
 - 🎨 **Cyberpunk terminal aesthetic** with neon colors and animations
 - 📊 **Statistics dashboard** showing containers status at a glance
-- 🔄 **Auto-refresh** every 60 seconds
+- 🔄 **Auto-refresh** refresh interval can be set (0 to disable autorefresh)
 - 🚀 **Fast and lightweight** - pure React frontend, minimal Node.js backend
 - 🐋 **Docker-compatible** - works with any Docker version
 
@@ -24,84 +24,57 @@ The interface features:
 - Container cards with image, version, and status information
 - Responsive design for desktop and mobile
 
-## 📋 Prerequisites
-
-- Node.js 16+ 
-- Docker installed and running
-- Access to Docker socket (`/var/run/docker.sock`)
-
 ## 🚀 Quick Start
 
-### Option 1: Run Directly (Recommended)
+### Prerequisites
+- Docker and Docker Compose installed
+- Access to Docker socket (`/var/run/docker.sock`)
 
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+### Installation
 
-2. **Start the server:**
-   ```bash
-   npm start
-   ```
+1. **Clone the repository:**
+```bash
+   git clone https://github.com/catadoxy/docker-update-checker.git
+   cd docker-update-checker
+```
 
-3. **Open the interface:**
-   Open `docker-update-checker.html` in your web browser or navigate to:
-   ```
-   file:///path/to/docker-update-checker.html
-   ```
+2. **Start with Docker Compose:**
+```bash
+   docker compose up -d
+```
 
-The backend API will be available at `http://localhost:3456`
 
-### Option 2: Run with Docker
 
-1. **Build the image:**
-   ```bash
-   docker build -t docker-update-checker .
-   ```
-
-2. **Run the container:**
-   ```bash
-   docker run -d \
-     --name docker-update-checker \
-     -p 3456:3456 \
-     -v /var/run/docker.sock:/var/run/docker.sock \
-     docker-update-checker
-   ```
-
-3. **Open the interface:**
-    Open your browser and go to `http://localhost:3456`
-
-### Option 3: Run with Docker Compose
-
-1. **Start the services:**
-   ```bash
-   docker-compose up -d
-   ```
-
-2. **Open the interface:**
-   http://localhost:3456 ✓
-   http://127.0.0.1:3456 ✓
-   http://192.168.50.130:3456 ✓
+3. **Access the interface:**
+   
+   Open your browser and navigate to:
+   - From the same machine: `http://localhost:3456`
+   - From another device on your network: `http://YOUR_SERVER_IP:3456`
 
 ## 🔧 Configuration
 
 ### Changing the Port
 
-Edit `server.js` and modify the PORT constant:
-```javascript
-const PORT = process.env.PORT || 3456;
+Edit `docker-compose.yml` and modify the port mapping:
+```yaml
+ports:
+  - "8080:3456"  # Change 8080 to your desired port
 ```
 
-Or set the PORT environment variable:
+Then restart:
 ```bash
-PORT=8080 npm start
+docker compose down
+docker compose up -d
 ```
+
+Access the interface at `http://localhost:8080` (or whatever port you chose).
 
 ### Docker Socket Path
 
-If your Docker socket is in a different location, update the path in `server.js`:
-```javascript
-const docker = new Docker({ socketPath: '/var/run/docker.sock' });
+If your Docker socket is in a different location, update `docker-compose.yml`:
+```yaml
+volumes:
+  - /path/to/docker.sock:/var/run/docker.sock:ro  # Update this path
 ```
 
 ### API Endpoint
