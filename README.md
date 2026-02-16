@@ -101,12 +101,6 @@ docker compose up -d
 - Images with custom registries (not Docker Hub) won't be checked
 - Images without tags or with SHA digests may show as "unknown"
 
-### CORS errors
-
-- Make sure you're opening the HTML file in a browser (not viewing source)
-- Check that the backend is running and accessible
-- Try using a local web server: `python3 -m http.server 8000`
-
 ## 🔒 Security Notes
 
 - This tool requires access to the Docker socket, which provides root-level access
