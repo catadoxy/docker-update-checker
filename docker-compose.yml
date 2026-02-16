@@ -1,0 +1,15 @@
+services:
+  docker-update-checker:
+    build: .
+    container_name: docker-update-checker
+    ports:
+      - "3456:3456"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      # Check interval in seconds (default: 300 = 5 minutes)
+      # Set to 0 to disable auto-refresh (manual refresh only)
+      # Minimum recommended: 60 seconds to avoid overwhelming Docker Hub API
+      - CHECK_INTERVAL=0
