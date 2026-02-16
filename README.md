@@ -32,18 +32,26 @@ The interface features:
 
 ### Installation
 
-1. **Clone the repository:**
-```bash
-   git clone https://github.com/catadoxy/docker-update-checker.git
-   cd docker-update-checker
+1. **Create a `docker-compose.yml` file:**
+```yaml
+   services:
+     docker-update-checker:
+       image: catadoxy/docker-update-checker:latest
+       container_name: docker-update-checker
+       ports:
+         - "3456:3456"
+       volumes:
+         - /var/run/docker.sock:/var/run/docker.sock:ro
+       restart: unless-stopped
+       environment:
+         - NODE_ENV=production
+         - CHECK_INTERVAL=300  # Check every 5 minutes (300 seconds)
 ```
 
-2. **Start with Docker Compose:**
+2. **Start the container:**
 ```bash
    docker compose up -d
 ```
-
-
 
 3. **Access the interface:**
    
@@ -53,72 +61,25 @@ The interface features:
 
 ## 🔧 Configuration
 
-### Changing the Port
+**Change the check interval:**
+Edit the `CHECK_INTERVAL` value in your docker-compose.yml:
+- `60` = Check every minute
+- `300` = Check every 5 minutes (default)
+- `600` = Check every 10 minutes
+- `0` = Disable auto-refresh (manual only)
 
-Edit `docker-compose.yml` and modify the port mapping:
+**Change the port:**
+
+Modify the port mapping in docker-compose.yml:
 ```yaml
 ports:
-  - "8080:3456"  # Change 8080 to your desired port
+  - "8080:3456"  # Use port 8080 instead of 3456
 ```
 
 Then restart:
 ```bash
 docker compose down
 docker compose up -d
-```
-
-Access the interface at `http://localhost:8080` (or whatever port you chose).
-
-### Docker Socket Path
-
-If your Docker socket is in a different location, update `docker-compose.yml`:
-```yaml
-volumes:
-  - /path/to/docker.sock:/var/run/docker.sock:ro  # Update this path
-```
-
-### API Endpoint
-
-The frontend defaults to `http://localhost:3456`. You can change this in the interface by editing the endpoint input field.
-
-## 📡 API Endpoints
-
-### `GET /api/containers`
-
-Returns a list of all running containers with update status.
-
-**Response:**
-```json
-{
-  "success": true,
-  "containers": [
-    {
-      "id": "abc123def456",
-      "name": "my-app",
-      "image": "nginx:latest",
-      "currentTag": "latest",
-      "latestTag": "latest",
-      "status": "Up 2 hours",
-      "state": "running",
-      "updateAvailable": false,
-      "currentDigest": "sha256:abc123",
-      "latestDigest": "sha256:abc123"
-    }
-  ],
-  "timestamp": "2024-02-16T10:30:00.000Z"
-}
-```
-
-### `GET /api/health`
-
-Health check endpoint.
-
-**Response:**
-```json
-{
-  "status": "ok",
-  "timestamp": "2024-02-16T10:30:00.000Z"
-}
 ```
 
 ## 🐛 Troubleshooting

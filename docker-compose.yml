@@ -1,6 +1,6 @@
 services:
   docker-update-checker:
-    build: .
+    image: catadoxy/docker-update-checker:latest
     container_name: docker-update-checker
     ports:
       - "3456:3456"
