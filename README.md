@@ -25,6 +25,8 @@ The interface features:
 - Separate sections for containers with updates and up-to-date containers
 - Responsive design for desktop and mobile
 
+![Alt text](assets/preview.png)
+
 ## 🚀 Quick Start
 
 ### Prerequisites
