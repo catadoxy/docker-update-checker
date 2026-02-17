@@ -36,7 +36,7 @@ The interface features:
 ```yaml
    services:
      docker-update-checker:
-       image: catadoxy/docker-update-checker:latest
+       image: ghcr.io/catadoxy/docker-update-checker:latest
        container_name: docker-update-checker
        ports:
          - "3456:3456"
