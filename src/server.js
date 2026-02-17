@@ -25,7 +25,7 @@ function detectRegistry(image) {
         return {
             type: 'lscr',
             registry: 'lscr.io',
-            authUrl: `https://lscr.io/token?service=lscr.io&scope=repository:${image.replace('lscr.io/', '')}:pull`,
+            authUrl: `https://lscr.io/token?scope=repository:${image.replace('lscr.io/', '')}:pull`,
             apiBase: 'https://lscr.io/v2'
         };
     } else {
@@ -63,7 +63,6 @@ function buildImagePath(rawImage, registryType) {
 
 // ─── Version Helpers ──────────────────────────────────────────────────────────
 
-// Returns true if a tag looks like a real version (requires at least major.minor)
 function isVersionTag(t) {
     return /^\d+\.\d+(\.\d+)*(-\w+)?$/.test(t) ||
            /^v\d+\.\d+(\.\d+)*(-\w+)?$/.test(t);
@@ -86,7 +85,6 @@ function sortVersionsDesc(tags) {
 
 // ─── Registry API Calls ───────────────────────────────────────────────────────
 
-// Try multiple manifest types to get a digest that matches the locally stored one
 async function getDigestForTag(apiBase, fullImagePath, tag, token) {
     const acceptTypes = [
         'application/vnd.oci.image.index.v1+json',
@@ -111,7 +109,6 @@ async function getDigestForTag(apiBase, fullImagePath, tag, token) {
     return null;
 }
 
-// Get the remote digest for a tag - used only for update detection
 async function getLatestDigest(rawImage, tag = 'latest') {
     try {
         const result = await getRegistryToken(rawImage);
@@ -125,7 +122,7 @@ async function getLatestDigest(rawImage, tag = 'latest') {
     }
 }
 
-// Get the highest version tag available on the registry
+// Get the highest version tag from the registry with pagination support
 async function getLatestVersionTag(rawImage) {
     try {
         const result = await getRegistryToken(rawImage);
@@ -133,17 +130,53 @@ async function getLatestVersionTag(rawImage) {
         const { token, registry } = result;
         const fullImagePath = buildImagePath(rawImage, registry.type);
 
-        const response = await axios.get(
-            `${registry.apiBase}/${fullImagePath}/tags/list`,
-            {
-                headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
-                timeout: 5000
-            }
-        );
+        let allTags = [];
+        let pageNum = 1;
+        let hasMore = true;
+        
+        // Fetch all paginated results (max 10 pages to prevent infinite loops)
+        while (hasMore && pageNum <= 10) {
+            try {
+                // Try with n=1000 parameter to get as many tags as possible per page
+                const url = pageNum === 1 
+                    ? `${registry.apiBase}/${fullImagePath}/tags/list?n=1000`
+                    : `${registry.apiBase}/${fullImagePath}/tags/list?n=1000&last=${allTags[allTags.length - 1]}`;
+                
+                const response = await axios.get(url, {
+                    headers: { 'Authorization': `Bearer ${token}`, 'Accept': 'application/json' },
+                    timeout: 5000
+                });
 
-        const tags = (response.data.tags || []).filter(isVersionTag);
-        if (tags.length === 0) return null;
-        return sortVersionsDesc(tags)[0];
+                const tags = response.data.tags || [];
+                if (tags.length === 0) break;
+                
+                allTags = allTags.concat(tags);
+                
+                // Check if there are more pages via Link header or if we got fewer tags than requested
+                hasMore = tags.length === 1000;
+                pageNum++;
+                
+            } catch (err) {
+                console.error(`Error fetching page ${pageNum} for ${rawImage}:`, err.message);
+                break;
+            }
+        }
+
+        const versionTags = allTags.filter(isVersionTag);
+        
+        // Debug logging for specific images
+        const imageName = rawImage.split('/').pop().toLowerCase();
+        if (['homarr', 'immich', 'nginx-proxy-manager'].some(n => imageName.includes(n))) {
+            console.log(`\n📋 [${rawImage}]`);
+            console.log(`   Total tags fetched: ${allTags.length} (${pageNum - 1} pages)`);
+            console.log(`   Version-like tags: ${versionTags.length}`);
+            const sorted = sortVersionsDesc(versionTags);
+            console.log(`   Top 10 versions:`, sorted.slice(0, 10));
+            console.log(`   Selected: ${sorted[0]}\n`);
+        }
+
+        if (versionTags.length === 0) return null;
+        return sortVersionsDesc(versionTags)[0];
     } catch (error) {
         console.error(`Failed to get version tags for ${rawImage}:`, error.message);
         return null;
@@ -184,23 +217,20 @@ app.get('/api/containers', async (req, res) => {
                 const { tag } = parseImage(imageName);
                 const fullImageRef = imageName.split('@')[0].split(':')[0];
 
-                // Local digest - used only to detect if an update exists
                 const imageDetails = await docker.getImage(inspect.Image).inspect();
                 const currentDigest = imageDetails.RepoDigests?.[0]?.split('@')[1] || null;
 
-                // Remote digest for the same tag - compare to detect updates
                 const remoteDigest = await getLatestDigest(fullImageRef, tag);
                 const updateAvailable = !!(remoteDigest && currentDigest && remoteDigest !== currentDigest);
 
-                // Latest version tag from the registry (shown in the UI)
                 const latestVersion = await getLatestVersionTag(fullImageRef);
 
                 return {
                     id: containerInfo.Id.substring(0, 12),
                     name: containerInfo.Names[0].replace('/', ''),
                     image: imageName,
-                    currentTag: tag,          // The tag the container is using (e.g. latest, release, 1.2.3)
-                    latestVersion: latestVersion || 'unknown', // Highest version tag on the registry
+                    currentTag: tag,
+                    latestVersion: latestVersion || 'unknown',
                     status: containerInfo.Status,
                     state: containerInfo.State,
                     updateAvailable
