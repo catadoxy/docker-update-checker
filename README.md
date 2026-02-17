@@ -1,4 +1,4 @@
-![Alt text](assets/icon.png)
+![Alt text](assets/icon.jpg)
 
 A modern, cyberpunk-themed web interface to monitor your Docker containers and check for available updates in real-time.
 
