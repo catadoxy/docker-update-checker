@@ -1,4 +1,4 @@
-# 🐳 Docker Update Checker
+![Alt text](assets/icon.png)
 
 A modern, cyberpunk-themed web interface to monitor your Docker containers and check for available updates in real-time.
 
