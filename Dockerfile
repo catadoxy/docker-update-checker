@@ -9,8 +9,8 @@ COPY package.json ./
 RUN npm install --only=production
 
 # Copy application files
-COPY server.js ./
-COPY docker-update-checker.html ./
+COPY src/server.js ./
+COPY docs/docker-update-checker.html ./
 
 # Expose the port
 EXPOSE 3456
