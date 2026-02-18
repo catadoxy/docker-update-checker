@@ -9,31 +9,75 @@
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@700;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --neon-cyan: #00ffff;
-            --neon-pink: #ff00ff;
-            --neon-green: #00ff41;
-            --neon-orange: #ff6b00;
-            --dark-bg: #0a0e27;
-            --darker-bg: #050816;
-            --card-bg: rgba(15, 23, 42, 0.8);
-            --border-color: rgba(0, 255, 255, 0.3);
+        /* ─── Theme Variables ─────────────────────────────────────────────────── */
+        
+        /* Cyberpunk Theme (Original) */
+        [data-theme="cyberpunk"] {
+            --primary: #00ffff;
+            --secondary: #ff00ff;
+            --accent: #00ff41;
+            --warning: #ff6b00;
+            --bg-main: #050816;
+            --bg-secondary: #0a0e27;
+            --bg-card: rgba(15, 23, 42, 0.8);
+            --border: rgba(0, 255, 255, 0.3);
+            --text-primary: #00ffff;
+            --text-secondary: rgba(0, 255, 255, 0.7);
+            --text-muted: rgba(0, 255, 255, 0.4);
+            --font-main: 'JetBrains Mono', monospace;
+            --font-display: 'Orbitron', monospace;
+        }
+
+        /* Light Theme */
+        [data-theme="light"] {
+            --primary: #2563eb;
+            --secondary: #7c3aed;
+            --accent: #10b981;
+            --warning: #f59e0b;
+            --bg-main: #f8fafc;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --border: #e2e8f0;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            --font-main: 'Inter', sans-serif;
+            --font-display: 'Inter', sans-serif;
+        }
+
+        /* Dark Professional Theme */
+        [data-theme="dark"] {
+            --primary: #3b82f6;
+            --secondary: #8b5cf6;
+            --accent: #10b981;
+            --warning: #f59e0b;
+            --bg-main: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: #1e293b;
+            --border: #334155;
+            --text-primary: #f1f5f9;
+            --text-secondary: #cbd5e1;
+            --text-muted: #64748b;
+            --font-main: 'Inter', sans-serif;
+            --font-display: 'Inter', sans-serif;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'JetBrains Mono', monospace;
-            background: var(--darker-bg);
-            color: var(--neon-cyan);
+            font-family: var(--font-main);
+            background: var(--bg-main);
+            color: var(--text-primary);
             min-height: 100vh;
             overflow-x: hidden;
             position: relative;
+            transition: background 0.3s ease, color 0.3s ease;
         }
 
-        body::before {
+        /* Animated background grid (cyberpunk only) */
+        [data-theme="cyberpunk"] body::before {
             content: '';
             position: fixed;
             top: 0; left: 0;
@@ -52,7 +96,8 @@
             100% { transform: translate(50px, 50px); }
         }
 
-        body::after {
+        /* Scanline effect (cyberpunk only) */
+        [data-theme="cyberpunk"] body::after {
             content: '';
             position: fixed;
             top: 0; left: 0;
@@ -77,23 +122,27 @@
             padding: 40px 20px;
         }
 
+        /* ─── Header ─────────────────────────────────────────────────────────── */
         .header {
             text-align: center;
             margin-bottom: 60px;
         }
 
         .title {
-            font-family: 'Orbitron', monospace;
-            font-size: 4rem;
+            font-family: var(--font-display);
+            font-size: 3.5rem;
             font-weight: 900;
-            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-pink));
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        [data-theme="cyberpunk"] .title {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             text-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
-            margin-bottom: 10px;
             animation: glitch 3s infinite;
-            letter-spacing: 4px;
         }
 
         @keyframes glitch {
@@ -103,9 +152,14 @@
             96% { transform: translate(-2px, -2px); }
         }
 
+        [data-theme="light"] .title,
+        [data-theme="dark"] .title {
+            color: var(--primary);
+        }
+
         .subtitle {
             font-size: 0.9rem;
-            color: rgba(0, 255, 255, 0.6);
+            color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 3px;
             margin-bottom: 15px;
@@ -139,11 +193,54 @@
             border-color: var(--neon-pink);
             text-shadow: 0 0 8px var(--neon-pink);
         }
+
         .refresh-info {
             font-size: 0.7rem;
-            color: rgba(0, 255, 255, 0.4);
+            color: var(--text-muted);
         }
 
+        /* ─── Theme Switcher ─────────────────────────────────────────────────── */
+        .theme-switcher {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            display: flex;
+            gap: 8px;
+            background: var(--bg-card);
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .theme-btn {
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-secondary);
+            font-family: var(--font-main);
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .theme-btn:hover {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .theme-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        /* ─── Controls ───────────────────────────────────────────────────────── */
         .controls {
             display: flex;
             gap: 15px;
@@ -154,10 +251,10 @@
 
         .btn {
             padding: 12px 30px;
-            border: 2px solid var(--neon-cyan);
+            border: 2px solid var(--primary);
             background: transparent;
-            color: var(--neon-cyan);
-            font-family: 'JetBrains Mono', monospace;
+            color: var(--primary);
+            font-family: var(--font-main);
             font-weight: 600;
             cursor: pointer;
             position: relative;
@@ -166,6 +263,7 @@
             text-transform: uppercase;
             letter-spacing: 1px;
             font-size: 0.85rem;
+            border-radius: 4px;
         }
 
         .btn::before {
@@ -173,27 +271,38 @@
             position: absolute;
             top: 0; left: -100%;
             width: 100%; height: 100%;
-            background: var(--neon-cyan);
+            background: var(--primary);
             transition: left 0.3s ease;
             z-index: -1;
         }
 
-        .btn:hover { color: var(--darker-bg); box-shadow: 0 0 20px var(--neon-cyan); }
+        .btn:hover {
+            color: white;
+            box-shadow: 0 0 20px var(--primary);
+        }
+
         .btn:hover::before { left: 0; }
         .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-        .btn-refresh { border-color: var(--neon-green); color: var(--neon-green); }
-        .btn-refresh::before { background: var(--neon-green); }
-        .btn-refresh:hover { box-shadow: 0 0 20px var(--neon-green); color: var(--darker-bg); }
 
+        .btn-refresh { border-color: var(--accent); color: var(--accent); }
+        .btn-refresh::before { background: var(--accent); }
+        .btn-refresh:hover { box-shadow: 0 0 20px var(--accent); }
+
+        /* ─── Stats Bar ──────────────────────────────────────────────────────── */
         .status-bar {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            border: 1px solid var(--border);
             padding: 20px;
             margin-bottom: 30px;
             display: flex;
             justify-content: space-around;
             flex-wrap: wrap;
             gap: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        [data-theme="cyberpunk"] .status-bar {
             backdrop-filter: blur(10px);
             box-shadow: 0 0 30px rgba(0, 255, 255, 0.1);
         }
@@ -214,15 +323,16 @@
             opacity: 0.7;
         }
 
-        .stat-total .stat-value  { color: var(--neon-cyan); }
-        .stat-updates .stat-value { color: var(--neon-orange); animation: pulse 2s infinite; }
-        .stat-current .stat-value { color: var(--neon-green); }
+        .stat-total .stat-value  { color: var(--primary); }
+        .stat-updates .stat-value { color: var(--warning); animation: pulse 2s infinite; }
+        .stat-current .stat-value { color: var(--accent); }
 
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.6; }
         }
 
+        /* ─── Section Headers ────────────────────────────────────────────────── */
         .section-header {
             font-size: 1.2rem;
             font-weight: 700;
@@ -238,32 +348,33 @@
         }
 
         .section-header.updates {
-            color: var(--neon-orange);
-            border-color: var(--neon-orange);
+            color: var(--warning);
+            border-color: var(--warning);
         }
 
         .section-header.uptodate {
-            color: var(--neon-green);
-            border-color: var(--neon-green);
+            color: var(--accent);
+            border-color: var(--accent);
         }
 
         .section-count {
             font-size: 0.8rem;
             padding: 3px 10px;
-            border-radius: 2px;
+            border-radius: 4px;
             border: 1px solid;
         }
 
         .section-header.updates .section-count {
-            background: rgba(255, 107, 0, 0.15);
-            border-color: var(--neon-orange);
+            background: rgba(245, 158, 11, 0.15);
+            border-color: var(--warning);
         }
 
         .section-header.uptodate .section-count {
-            background: rgba(0, 255, 65, 0.15);
-            border-color: var(--neon-green);
+            background: rgba(16, 185, 129, 0.15);
+            border-color: var(--accent);
         }
 
+        /* ─── Container Grid ─────────────────────────────────────────────────── */
         .container-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
@@ -272,13 +383,13 @@
         }
 
         .container-card {
-            background: var(--card-bg);
-            border: 2px solid var(--border-color);
+            background: var(--bg-card);
+            border: 2px solid var(--border);
             padding: 25px;
             position: relative;
-            backdrop-filter: blur(10px);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
             animation: cardAppear 0.5s ease backwards;
+            border-radius: 8px;
         }
 
         @keyframes cardAppear {
@@ -288,19 +399,35 @@
 
         .container-card:hover {
             transform: translateY(-5px);
+        }
+
+        [data-theme="cyberpunk"] .container-card {
+            backdrop-filter: blur(10px);
+        }
+
+        [data-theme="cyberpunk"] .container-card:hover {
             box-shadow: 0 10px 40px rgba(0, 255, 255, 0.2);
         }
 
+        [data-theme="light"] .container-card:hover,
+        [data-theme="dark"] .container-card:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
         .container-card.has-update {
-            border-color: var(--neon-orange);
+            border-color: var(--warning);
+        }
+
+        [data-theme="cyberpunk"] .container-card.has-update {
             animation: cardAppear 0.5s ease backwards, borderGlow 2s infinite;
         }
 
         @keyframes borderGlow {
-            0%, 100% { border-color: var(--neon-orange); box-shadow: 0 0 20px rgba(255, 107, 0, 0.3); }
-            50%       { border-color: var(--neon-pink);   box-shadow: 0 0 30px rgba(255, 0, 255, 0.4); }
+            0%, 100% { border-color: #ff6b00; box-shadow: 0 0 20px rgba(255, 107, 0, 0.3); }
+            50%       { border-color: #ff00ff; box-shadow: 0 0 30px rgba(255, 0, 255, 0.4); }
         }
 
+        /* ─── Card Content ───────────────────────────────────────────────────── */
         .container-header {
             display: flex;
             justify-content: space-between;
@@ -312,14 +439,14 @@
         .container-name {
             font-size: 1.1rem;
             font-weight: 700;
-            color: var(--neon-cyan);
+            color: var(--text-primary);
             word-break: break-word;
             flex: 1;
         }
 
         .status-badge {
             padding: 6px 12px;
-            border-radius: 2px;
+            border-radius: 4px;
             font-size: 0.7rem;
             font-weight: 600;
             text-transform: uppercase;
@@ -328,15 +455,15 @@
         }
 
         .status-running {
-            background: rgba(0, 255, 65, 0.2);
-            color: var(--neon-green);
-            border: 1px solid var(--neon-green);
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--accent);
+            border: 1px solid var(--accent);
         }
 
         .status-update {
-            background: rgba(255, 107, 0, 0.2);
-            color: var(--neon-orange);
-            border: 1px solid var(--neon-orange);
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+            border: 1px solid var(--warning);
             animation: pulse 2s infinite;
         }
 
@@ -354,7 +481,7 @@
         }
 
         .info-label {
-            color: rgba(0, 255, 255, 0.5);
+            color: var(--text-muted);
             min-width: 90px;
             text-transform: uppercase;
             font-size: 0.75rem;
@@ -363,7 +490,7 @@
         }
 
         .info-value {
-            color: rgba(0, 255, 255, 0.9);
+            color: var(--text-secondary);
             word-break: break-all;
             flex: 1;
         }
@@ -371,18 +498,20 @@
         .version-badge {
             display: inline-block;
             padding: 4px 10px;
-            background: rgba(0, 255, 255, 0.1);
-            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
             font-size: 0.8rem;
+            border-radius: 4px;
         }
 
         .version-badge.latest-version {
-            border-color: var(--neon-orange);
-            background: rgba(255, 107, 0, 0.1);
-            color: var(--neon-orange);
+            border-color: var(--warning);
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
             font-weight: 700;
         }
 
+        /* ─── States ─────────────────────────────────────────────────────────── */
         .loading {
             text-align: center;
             padding: 60px;
@@ -401,12 +530,13 @@
         }
 
         .error {
-            background: rgba(255, 0, 0, 0.1);
-            border: 2px solid rgba(255, 0, 0, 0.5);
+            background: rgba(239, 68, 68, 0.1);
+            border: 2px solid rgba(239, 68, 68, 0.5);
             padding: 30px;
             text-align: center;
-            color: #ff4444;
+            color: #ef4444;
             margin: 20px 0;
+            border-radius: 8px;
         }
 
         .error-title {
@@ -418,7 +548,7 @@
         .empty-state {
             text-align: center;
             padding: 80px 20px;
-            color: rgba(0, 255, 255, 0.5);
+            color: var(--text-muted);
         }
 
         .empty-state-icon {
@@ -426,14 +556,20 @@
             margin-bottom: 20px;
         }
 
+        /* ─── Responsive ─────────────────────────────────────────────────────── */
         @media (max-width: 768px) {
             .title { font-size: 2.5rem; }
             .container-grid { grid-template-columns: 1fr; }
             .controls { flex-direction: column; }
+            .theme-switcher {
+                top: 10px;
+                right: 10px;
+                flex-direction: column;
+            }
         }
     </style>
 </head>
-<body>
+<body data-theme="cyberpunk">
     <div id="root"></div>
 
     <script type="text/babel">
@@ -445,8 +581,17 @@
             const [error, setError]           = useState(null);
             const [checkInterval, setCheckInterval] = useState(null);
             const [configLoaded, setConfigLoaded]   = useState(false);
+            const [theme, setTheme] = useState(() => {
+                return localStorage.getItem('docker-monitor-theme') || 'cyberpunk';
+            });
 
             const endpoint = window.location.origin;
+
+            // Apply theme to body
+            useEffect(() => {
+                document.body.setAttribute('data-theme', theme);
+                localStorage.setItem('docker-monitor-theme', theme);
+            }, [theme]);
 
             const fetchContainers = async () => {
                 setLoading(true);
@@ -496,10 +641,32 @@
             return (
                 <div className="app-container">
 
+                    {/* Theme Switcher */}
+                    <div className="theme-switcher">
+                        <button 
+                            className={`theme-btn ${theme === 'cyberpunk' ? 'active' : ''}`}
+                            onClick={() => setTheme('cyberpunk')}
+                        >
+                            Cyberpunk
+                        </button>
+                        <button 
+                            className={`theme-btn ${theme === 'light' ? 'active' : ''}`}
+                            onClick={() => setTheme('light')}
+                        >
+                            Light
+                        </button>
+                        <button 
+                            className={`theme-btn ${theme === 'dark' ? 'active' : ''}`}
+                            onClick={() => setTheme('dark')}
+                        >
+                            Dark
+                        </button>
+                    </div>
+
                     <div className="header">
-                        <h1 className="title">DOCKER_MONITOR</h1>
+                        <h1 className="title">DOCKER MONITOR</h1>
                         <p className="subtitle">Container Update Surveillance System</p>
-                          <div className="creator">
+                        <div className="creator">
                             <img src="https://avatars.githubusercontent.com/u/150629604?v=4" />
                             Created by
                             <a href="https://github.com/catadoxy" target="_blank" rel="noopener noreferrer">
@@ -509,7 +676,7 @@
                         <div className="refresh-info">
                             {checkInterval === null ? 'Loading config...' :
                              checkInterval === 0 ? (
-                                <span style={{color: 'rgba(255, 107, 0, 0.7)'}}>
+                                <span style={{color: 'var(--warning)'}}>
                                     Auto-refresh: <strong>DISABLED</strong> (manual only)
                                 </span>
                              ) : `Auto-refresh: every ${checkInterval}s (${(checkInterval / 60).toFixed(1)} min)`
@@ -564,7 +731,7 @@
 
                     {!loading && !error && containers.length > 0 && (<>
 
-                        {/* ── Updates Available section ── */}
+                        {/* Updates Available */}
                         {withUpdates.length > 0 && (<>
                             <div className="section-header updates">
                                 ⚠ Updates Available
@@ -604,7 +771,7 @@
                             </div>
                         </>)}
 
-                        {/* ── Up to Date section ── */}
+                        {/* Up to Date */}
                         {upToDate.length > 0 && (<>
                             <div className="section-header uptodate">
                                 ✓ Up to Date
