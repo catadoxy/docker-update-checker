@@ -4,17 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Docker Update Monitor</title>
-    <link rel="icon" href="https://avatars.githubusercontent.com/u/150629604?v=4">
-    <link rel="apple-touch-icon" href="https://avatars.githubusercontent.com/u/150629604?v=4">
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@700;900&family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        /* ─── Theme Variables ─────────────────────────────────────────────────── */
-        
-        /* Cyberpunk Theme (Original) */
-        [data-theme="cyberpunk"] {
+        :root {
             --primary: #00ffff;
             --secondary: #ff00ff;
             --accent: #00ff41;
@@ -30,8 +25,7 @@
             --font-display: 'Orbitron', monospace;
         }
 
-        /* Light Theme */
-        [data-theme="light"] {
+        body.light-theme {
             --primary: #2563eb;
             --secondary: #7c3aed;
             --accent: #10b981;
@@ -47,8 +41,7 @@
             --font-display: 'Inter', sans-serif;
         }
 
-        /* Dark Professional Theme */
-        [data-theme="dark"] {
+        body.dark-theme {
             --primary: #3b82f6;
             --secondary: #8b5cf6;
             --accent: #10b981;
@@ -76,8 +69,7 @@
             transition: background 0.3s ease, color 0.3s ease;
         }
 
-        /* Animated background grid (cyberpunk only) */
-        [data-theme="cyberpunk"] body::before {
+        body::before {
             content: '';
             position: fixed;
             top: 0; left: 0;
@@ -89,6 +81,12 @@
             animation: gridScroll 20s linear infinite;
             pointer-events: none;
             z-index: 0;
+            opacity: 1;
+        }
+
+        body.light-theme::before,
+        body.dark-theme::before {
+            opacity: 0;
         }
 
         @keyframes gridScroll {
@@ -96,8 +94,7 @@
             100% { transform: translate(50px, 50px); }
         }
 
-        /* Scanline effect (cyberpunk only) */
-        [data-theme="cyberpunk"] body::after {
+        body::after {
             content: '';
             position: fixed;
             top: 0; left: 0;
@@ -107,6 +104,12 @@
             pointer-events: none;
             z-index: 1;
             animation: scanline 8s linear infinite;
+            opacity: 1;
+        }
+
+        body.light-theme::after,
+        body.dark-theme::after {
+            opacity: 0;
         }
 
         @keyframes scanline {
@@ -122,7 +125,6 @@
             padding: 40px 20px;
         }
 
-        /* ─── Header ─────────────────────────────────────────────────────────── */
         .header {
             text-align: center;
             margin-bottom: 60px;
@@ -134,15 +136,16 @@
             font-weight: 900;
             margin-bottom: 10px;
             letter-spacing: 2px;
+            color: var(--text-primary);
+            animation: glitch 3s infinite;
         }
 
-        [data-theme="cyberpunk"] .title {
+        body:not(.light-theme):not(.dark-theme) .title {
             background: linear-gradient(135deg, var(--primary), var(--secondary));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
             text-shadow: 0 0 30px rgba(0, 255, 255, 0.5);
-            animation: glitch 3s infinite;
         }
 
         @keyframes glitch {
@@ -152,11 +155,6 @@
             96% { transform: translate(-2px, -2px); }
         }
 
-        [data-theme="light"] .title,
-        [data-theme="dark"] .title {
-            color: var(--primary);
-        }
-
         .subtitle {
             font-size: 0.9rem;
             color: var(--text-muted);
@@ -164,42 +162,12 @@
             letter-spacing: 3px;
             margin-bottom: 15px;
         }
-        .creator {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 15px;
-            font-size: 0.75rem;
-            letter-spacing: 2px;
-            opacity: 0.75;
-        }
-
-        .creator img {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            box-shadow: 0 0 6px var(--neon-pink);
-        }
-
-        .creator a {
-            color: var(--neon-pink);
-            text-decoration: none;
-            border-bottom: 1px solid transparent;
-            transition: all 0.25s ease;
-        }
-
-        .creator a:hover {
-            border-color: var(--neon-pink);
-            text-shadow: 0 0 8px var(--neon-pink);
-        }
 
         .refresh-info {
             font-size: 0.7rem;
             color: var(--text-muted);
         }
 
-        /* ─── Theme Switcher ─────────────────────────────────────────────────── */
         .theme-switcher {
             position: fixed;
             top: 20px;
@@ -240,7 +208,6 @@
             border-color: var(--primary);
         }
 
-        /* ─── Controls ───────────────────────────────────────────────────────── */
         .controls {
             display: flex;
             gap: 15px;
@@ -288,7 +255,6 @@
         .btn-refresh::before { background: var(--accent); }
         .btn-refresh:hover { box-shadow: 0 0 20px var(--accent); }
 
-        /* ─── Stats Bar ──────────────────────────────────────────────────────── */
         .status-bar {
             background: var(--bg-card);
             border: 1px solid var(--border);
@@ -300,11 +266,7 @@
             gap: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        [data-theme="cyberpunk"] .status-bar {
             backdrop-filter: blur(10px);
-            box-shadow: 0 0 30px rgba(0, 255, 255, 0.1);
         }
 
         .stat { text-align: center; }
@@ -332,7 +294,6 @@
             50% { opacity: 0.6; }
         }
 
-        /* ─── Section Headers ────────────────────────────────────────────────── */
         .section-header {
             font-size: 1.2rem;
             font-weight: 700;
@@ -374,7 +335,6 @@
             border-color: var(--accent);
         }
 
-        /* ─── Container Grid ─────────────────────────────────────────────────── */
         .container-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
@@ -390,6 +350,7 @@
             transition: transform 0.3s ease, box-shadow 0.3s ease;
             animation: cardAppear 0.5s ease backwards;
             border-radius: 8px;
+            backdrop-filter: blur(10px);
         }
 
         @keyframes cardAppear {
@@ -399,35 +360,19 @@
 
         .container-card:hover {
             transform: translateY(-5px);
-        }
-
-        [data-theme="cyberpunk"] .container-card {
-            backdrop-filter: blur(10px);
-        }
-
-        [data-theme="cyberpunk"] .container-card:hover {
-            box-shadow: 0 10px 40px rgba(0, 255, 255, 0.2);
-        }
-
-        [data-theme="light"] .container-card:hover,
-        [data-theme="dark"] .container-card:hover {
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
         }
 
         .container-card.has-update {
             border-color: var(--warning);
-        }
-
-        [data-theme="cyberpunk"] .container-card.has-update {
             animation: cardAppear 0.5s ease backwards, borderGlow 2s infinite;
         }
 
         @keyframes borderGlow {
-            0%, 100% { border-color: #ff6b00; box-shadow: 0 0 20px rgba(255, 107, 0, 0.3); }
-            50%       { border-color: #ff00ff; box-shadow: 0 0 30px rgba(255, 0, 255, 0.4); }
+            0%, 100% { border-color: var(--warning); }
+            50%       { border-color: var(--secondary); }
         }
 
-        /* ─── Card Content ───────────────────────────────────────────────────── */
         .container-header {
             display: flex;
             justify-content: space-between;
@@ -511,7 +456,6 @@
             font-weight: 700;
         }
 
-        /* ─── States ─────────────────────────────────────────────────────────── */
         .loading {
             text-align: center;
             padding: 60px;
@@ -556,7 +500,6 @@
             margin-bottom: 20px;
         }
 
-        /* ─── Responsive ─────────────────────────────────────────────────────── */
         @media (max-width: 768px) {
             .title { font-size: 2.5rem; }
             .container-grid { grid-template-columns: 1fr; }
@@ -569,36 +512,76 @@
         }
     </style>
 </head>
-<body data-theme="cyberpunk">
+<body>
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect } = React;
 
+        function ThemeSwitcher({ currentTheme, onThemeChange }) {
+            return (
+                <div className="theme-switcher">
+                    <button 
+                        className={`theme-btn ${currentTheme === 'cyberpunk' ? 'active' : ''}`}
+                        onClick={() => onThemeChange('cyberpunk')}
+                    >
+                        Cyberpunk
+                    </button>
+                    <button 
+                        className={`theme-btn ${currentTheme === 'light' ? 'active' : ''}`}
+                        onClick={() => onThemeChange('light')}
+                    >
+                        Light
+                    </button>
+                    <button 
+                        className={`theme-btn ${currentTheme === 'dark' ? 'active' : ''}`}
+                        onClick={() => onThemeChange('dark')}
+                    >
+                        Dark
+                    </button>
+                </div>
+            );
+        }
+
         function App() {
             const [containers, setContainers] = useState([]);
-            const [loading, setLoading]       = useState(false);
-            const [error, setError]           = useState(null);
+            const [loading, setLoading] = useState(false);
+            const [error, setError] = useState(null);
             const [checkInterval, setCheckInterval] = useState(null);
-            const [configLoaded, setConfigLoaded]   = useState(false);
-            const [theme, setTheme] = useState(() => {
-                return localStorage.getItem('docker-monitor-theme') || 'cyberpunk';
-            });
+            const [configLoaded, setConfigLoaded] = useState(false);
+            const [theme, setTheme] = useState('cyberpunk');
 
             const endpoint = window.location.origin;
 
-            // Apply theme to body
             useEffect(() => {
-                document.body.setAttribute('data-theme', theme);
-                localStorage.setItem('docker-monitor-theme', theme);
-            }, [theme]);
+                const savedTheme = localStorage.getItem('docker-monitor-theme');
+                if (savedTheme) {
+                    setTheme(savedTheme);
+                    updateBodyTheme(savedTheme);
+                }
+            }, []);
+
+            const updateBodyTheme = (newTheme) => {
+                document.body.classList.remove('light-theme', 'dark-theme');
+                if (newTheme === 'light') {
+                    document.body.classList.add('light-theme');
+                } else if (newTheme === 'dark') {
+                    document.body.classList.add('dark-theme');
+                }
+            };
+
+            const handleThemeChange = (newTheme) => {
+                setTheme(newTheme);
+                localStorage.setItem('docker-monitor-theme', newTheme);
+                updateBodyTheme(newTheme);
+            };
 
             const fetchContainers = async () => {
                 setLoading(true);
                 setError(null);
                 try {
-                    const response = await fetch(`${endpoint}/api/containers`);
-                    if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    const response = await fetch(endpoint + '/api/containers');
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
                     const data = await response.json();
                     if (data.error) throw new Error(data.error);
                     setContainers(data.containers || []);
@@ -612,10 +595,10 @@
             useEffect(() => {
                 const init = async () => {
                     try {
-                        const response = await fetch(`${endpoint}/api/config`);
+                        const response = await fetch(endpoint + '/api/config');
                         const data = response.ok ? await response.json() : { checkInterval: 300 };
                         setCheckInterval(data.checkInterval);
-                    } catch {
+                    } catch (e) {
                         setCheckInterval(300);
                     }
                     setConfigLoaded(true);
@@ -630,57 +613,20 @@
                 return () => clearInterval(interval);
             }, [checkInterval, configLoaded]);
 
-            const withUpdates = containers
-                .filter(c => c.updateAvailable)
-                .sort((a, b) => a.name.localeCompare(b.name));
-
-            const upToDate = containers
-                .filter(c => !c.updateAvailable)
-                .sort((a, b) => a.name.localeCompare(b.name));
+            const withUpdates = containers.filter(c => c.updateAvailable).sort((a, b) => a.name.localeCompare(b.name));
+            const upToDate = containers.filter(c => !c.updateAvailable).sort((a, b) => a.name.localeCompare(b.name));
 
             return (
                 <div className="app-container">
-
-                    {/* Theme Switcher */}
-                    <div className="theme-switcher">
-                        <button 
-                            className={`theme-btn ${theme === 'cyberpunk' ? 'active' : ''}`}
-                            onClick={() => setTheme('cyberpunk')}
-                        >
-                            Cyberpunk
-                        </button>
-                        <button 
-                            className={`theme-btn ${theme === 'light' ? 'active' : ''}`}
-                            onClick={() => setTheme('light')}
-                        >
-                            Light
-                        </button>
-                        <button 
-                            className={`theme-btn ${theme === 'dark' ? 'active' : ''}`}
-                            onClick={() => setTheme('dark')}
-                        >
-                            Dark
-                        </button>
-                    </div>
+                    <ThemeSwitcher currentTheme={theme} onThemeChange={handleThemeChange} />
 
                     <div className="header">
-                        <h1 className="title">DOCKER MONITOR</h1>
+                        <h1 className="title">DOCKER_MONITOR</h1>
                         <p className="subtitle">Container Update Surveillance System</p>
-                        <div className="creator">
-                            <img src="https://avatars.githubusercontent.com/u/150629604?v=4" />
-                            Created by
-                            <a href="https://github.com/catadoxy" target="_blank" rel="noopener noreferrer">
-                                catadoxy
-                            </a>
-                        </div>
                         <div className="refresh-info">
                             {checkInterval === null ? 'Loading config...' :
-                             checkInterval === 0 ? (
-                                <span style={{color: 'var(--warning)'}}>
-                                    Auto-refresh: <strong>DISABLED</strong> (manual only)
-                                </span>
-                             ) : `Auto-refresh: every ${checkInterval}s (${(checkInterval / 60).toFixed(1)} min)`
-                            }
+                             checkInterval === 0 ? 'Auto-refresh: DISABLED (manual only)' :
+                             'Auto-refresh: every ' + checkInterval + 's (' + (checkInterval / 60).toFixed(1) + ' min)'}
                         </div>
                     </div>
 
@@ -711,11 +657,8 @@
 
                     {error && (
                         <div className="error">
-                            <div className="error-title">⚠ CONNECTION ERROR</div>
+                            <div className="error-title">CONNECTION ERROR</div>
                             <div>{error}</div>
-                            <div style={{marginTop: '15px', fontSize: '0.85rem'}}>
-                                Make sure the backend server is running on {endpoint}
-                            </div>
                         </div>
                     )}
 
@@ -723,100 +666,87 @@
                         <div className="empty-state">
                             <div className="empty-state-icon">🐳</div>
                             <div>No containers detected</div>
-                            <div style={{fontSize: '0.85rem', marginTop: '10px'}}>
-                                Start some Docker containers or check your Docker connection
-                            </div>
                         </div>
                     )}
 
-                    {!loading && !error && containers.length > 0 && (<>
-
-                        {/* Updates Available */}
-                        {withUpdates.length > 0 && (<>
-                            <div className="section-header updates">
-                                ⚠ Updates Available
-                                <span className="section-count">{withUpdates.length}</span>
-                            </div>
-                            <div className="container-grid">
-                                {withUpdates.map((container, idx) => (
-                                    <div
-                                        key={container.id}
-                                        className="container-card has-update"
-                                        style={{animationDelay: `${idx * 0.05}s`}}
-                                    >
-                                        <div className="container-header">
-                                            <div className="container-name">{container.name}</div>
-                                            <div className="status-badge status-update">⚠ Update</div>
-                                        </div>
-                                        <div className="container-info">
-                                            <div className="info-row">
-                                                <div className="info-label">Image</div>
-                                                <div className="info-value">{container.image}</div>
-                                            </div>
-                                            <div className="info-row">
-                                                <div className="info-label">Latest</div>
-                                                <div className="info-value">
-                                                    <span className="version-badge latest-version">
-                                                        {container.latestVersion}
-                                                    </span>
+                    {!loading && !error && containers.length > 0 && (
+                        <>
+                            {withUpdates.length > 0 && (
+                                <>
+                                    <div className="section-header updates">
+                                        Updates Available
+                                        <span className="section-count">{withUpdates.length}</span>
+                                    </div>
+                                    <div className="container-grid">
+                                        {withUpdates.map((c, i) => (
+                                            <div key={c.id} className="container-card has-update" style={{animationDelay: (i * 0.05) + 's'}}>
+                                                <div className="container-header">
+                                                    <div className="container-name">{c.name}</div>
+                                                    <div className="status-badge status-update">Update</div>
+                                                </div>
+                                                <div className="container-info">
+                                                    <div className="info-row">
+                                                        <div className="info-label">Image</div>
+                                                        <div className="info-value">{c.image}</div>
+                                                    </div>
+                                                    <div className="info-row">
+                                                        <div className="info-label">Latest</div>
+                                                        <div className="info-value">
+                                                            <span className="version-badge latest-version">{c.latestVersion}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="info-row">
+                                                        <div className="info-label">Status</div>
+                                                        <div className="info-value">{c.status}</div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div className="info-row">
-                                                <div className="info-label">Status</div>
-                                                <div className="info-value">{container.status}</div>
-                                            </div>
-                                        </div>
+                                        ))}
                                     </div>
-                                ))}
-                            </div>
-                        </>)}
+                                </>
+                            )}
 
-                        {/* Up to Date */}
-                        {upToDate.length > 0 && (<>
-                            <div className="section-header uptodate">
-                                ✓ Up to Date
-                                <span className="section-count">{upToDate.length}</span>
-                            </div>
-                            <div className="container-grid">
-                                {upToDate.map((container, idx) => (
-                                    <div
-                                        key={container.id}
-                                        className="container-card"
-                                        style={{animationDelay: `${idx * 0.05}s`}}
-                                    >
-                                        <div className="container-header">
-                                            <div className="container-name">{container.name}</div>
-                                            <div className="status-badge status-running">✓ Current</div>
-                                        </div>
-                                        <div className="container-info">
-                                            <div className="info-row">
-                                                <div className="info-label">Image</div>
-                                                <div className="info-value">{container.image}</div>
-                                            </div>
-                                            <div className="info-row">
-                                                <div className="info-label">Tag</div>
-                                                <div className="info-value">
-                                                    <span className="version-badge">
-                                                        {container.currentTag}
-                                                    </span>
+                            {upToDate.length > 0 && (
+                                <>
+                                    <div className="section-header uptodate">
+                                        Up to Date
+                                        <span className="section-count">{upToDate.length}</span>
+                                    </div>
+                                    <div className="container-grid">
+                                        {upToDate.map((c, i) => (
+                                            <div key={c.id} className="container-card" style={{animationDelay: (i * 0.05) + 's'}}>
+                                                <div className="container-header">
+                                                    <div className="container-name">{c.name}</div>
+                                                    <div className="status-badge status-running">Current</div>
+                                                </div>
+                                                <div className="container-info">
+                                                    <div className="info-row">
+                                                        <div className="info-label">Image</div>
+                                                        <div className="info-value">{c.image}</div>
+                                                    </div>
+                                                    <div className="info-row">
+                                                        <div className="info-label">Tag</div>
+                                                        <div className="info-value">
+                                                            <span className="version-badge">{c.currentTag}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className="info-row">
+                                                        <div className="info-label">Status</div>
+                                                        <div className="info-value">{c.status}</div>
+                                                    </div>
                                                 </div>
                                             </div>
-                                            <div className="info-row">
-                                                <div className="info-label">Status</div>
-                                                <div className="info-value">{container.status}</div>
-                                            </div>
-                                        </div>
+                                        ))}
                                     </div>
-                                ))}
-                            </div>
-                        </>)}
-
-                    </>)}
+                                </>
+                            )}
+                        </>
+                    )}
                 </div>
             );
         }
 
-        ReactDOM.render(<App />, document.getElementById('root'));
+        ReactDOM.render(React.createElement(App), document.getElementById('root'));
     </script>
 </body>
 </html>

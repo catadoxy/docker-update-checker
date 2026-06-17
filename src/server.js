@@ -25,7 +25,7 @@ function detectRegistry(image) {
         return {
             type: 'lscr',
             registry: 'lscr.io',
-            authUrl: `https://lscr.io/token?scope=repository:${image.replace('lscr.io/', '')}:pull`,
+            authUrl: `https://lscr.io/token?service=lscr.io&scope=repository:${image.replace('lscr.io/', '')}:pull`,
             apiBase: 'https://lscr.io/v2'
         };
     } else {
