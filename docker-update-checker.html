@@ -4,10 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Docker Update Checker</title>
-    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+    <script>
+        // Apply the saved theme before first paint to avoid a flash.
+        try {
+            document.documentElement.setAttribute(
+                'data-theme',
+                localStorage.getItem('docker-update-checker-theme') || 'cyberpunk'
+            );
+        } catch (e) { /* storage unavailable */ }
+    </script>
     <style>
         :root {
             --neon-cyan: #00ffff;
@@ -43,7 +49,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background-image: 
+            background-image:
                 linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
             background-size: 50px 50px;
@@ -191,6 +197,19 @@
             box-shadow: 0 0 20px var(--neon-green);
         }
 
+        .btn-theme {
+            border-color: var(--neon-pink);
+            color: var(--neon-pink);
+        }
+
+        .btn-theme::before {
+            background: var(--neon-pink);
+        }
+
+        .btn-theme:hover {
+            box-shadow: 0 0 20px var(--neon-pink);
+        }
+
         .status-bar {
             background: var(--card-bg);
             border: 1px solid var(--border-color);
@@ -229,6 +248,27 @@
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.6; }
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .section-title-updates {
+            color: var(--neon-orange);
+            border-bottom: 2px solid var(--neon-orange);
+            margin-top: 20px;
+        }
+
+        .section-title-current {
+            color: var(--neon-green);
+            border-bottom: 2px solid var(--neon-green);
+            margin-top: 40px;
         }
 
         .container-grid {
@@ -356,6 +396,23 @@
             margin-top: 4px;
         }
 
+        .version-badge-latest {
+            border-color: var(--neon-orange);
+            background: rgba(255, 107, 0, 0.1);
+        }
+
+        .bump-major {
+            border-color: var(--neon-pink);
+            color: var(--neon-pink);
+        }
+
+        .bump-minor,
+        .bump-patch,
+        .bump-digest {
+            border-color: var(--neon-orange);
+            color: var(--neon-orange);
+        }
+
         .loading {
             text-align: center;
             padding: 60px;
@@ -388,6 +445,11 @@
             margin-bottom: 10px;
         }
 
+        .error-hint {
+            margin-top: 15px;
+            font-size: 0.85rem;
+        }
+
         .empty-state {
             text-align: center;
             padding: 80px 20px;
@@ -399,35 +461,27 @@
             margin-bottom: 20px;
         }
 
+        .empty-state-hint {
+            font-size: 0.85rem;
+            margin-top: 10px;
+        }
+
         .docker-endpoint {
             font-size: 0.75rem;
-            color: rgba(0, 255, 255, 0.4);
+            color: rgba(0, 255, 255, 0.5);
             text-align: center;
             margin-top: 10px;
         }
 
-        input[type="text"] {
-            background: var(--card-bg);
-            border: 1px solid var(--border-color);
-            color: var(--neon-cyan);
-            padding: 10px 15px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-            width: 300px;
-            transition: all 0.3s ease;
-        }
-
-        input[type="text"]:focus {
-            outline: none;
-            border-color: var(--neon-cyan);
-            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+        .endpoint-status.disabled {
+            color: rgba(255, 107, 0, 0.8);
         }
 
         @media (max-width: 768px) {
             .title {
                 font-size: 2.5rem;
             }
-            
+
             .container-grid {
                 grid-template-columns: 1fr;
             }
@@ -435,314 +489,75 @@
             .controls {
                 flex-direction: column;
             }
+        }
 
-            input[type="text"] {
-                width: 100%;
-            }
+        /* ─── Light ("non-cyberpunk") theme ─────────────────────────────────── */
+        :root[data-theme="light"] {
+            --neon-cyan: #0e7490;
+            --neon-pink: #a21caf;
+            --neon-green: #15803d;
+            --neon-orange: #c2410c;
+            --dark-bg: #e2e8f0;
+            --darker-bg: #f8fafc;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --border-color: rgba(14, 116, 144, 0.3);
+        }
+
+        :root[data-theme="light"] body {
+            color: #0f172a;
+        }
+
+        :root[data-theme="light"] body::before {
+            background-image:
+                linear-gradient(rgba(14, 116, 144, 0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(14, 116, 144, 0.06) 1px, transparent 1px);
+        }
+
+        :root[data-theme="light"] body::after {
+            display: none;
+        }
+
+        :root[data-theme="light"] .title {
+            text-shadow: none;
+            animation: none;
+        }
+
+        :root[data-theme="light"] .subtitle {
+            color: rgba(15, 23, 42, 0.6);
+        }
+
+        :root[data-theme="light"] .info-label {
+            color: rgba(15, 23, 42, 0.55);
+        }
+
+        :root[data-theme="light"] .info-value {
+            color: #0f172a;
+        }
+
+        :root[data-theme="light"] .empty-state,
+        :root[data-theme="light"] .docker-endpoint {
+            color: rgba(15, 23, 42, 0.55);
+        }
+
+        :root[data-theme="light"] .error {
+            color: #b91c1c;
+        }
+
+        :root[data-theme="light"] .status-bar {
+            box-shadow: 0 0 30px rgba(14, 116, 144, 0.08);
+        }
+
+        :root[data-theme="light"] .container-card {
+            box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+        }
+
+        :root[data-theme="light"] .container-card:hover {
+            box-shadow: 0 10px 40px rgba(14, 116, 144, 0.15);
         }
     </style>
 </head>
 <body>
     <div id="root"></div>
-
-    <script type="text/babel">
-        const { useState, useEffect } = React;
-
-        function App() {
-            const [containers, setContainers] = useState([]);
-            const [loading, setLoading] = useState(false);
-            const [error, setError] = useState(null);
-            const [endpoint] = useState(window.location.origin);
-            const [checkInterval, setCheckInterval] = useState(null); // null until loaded
-            const [configLoaded, setConfigLoaded] = useState(false);
-
-            const fetchContainers = async () => {
-                setLoading(true);
-                setError(null);
-                
-                try {
-                    const response = await fetch(`${endpoint}/api/containers`);
-                    
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
-                    
-                    const data = await response.json();
-                    
-                    if (data.error) {
-                        throw new Error(data.error);
-                    }
-                    
-                    setContainers(data.containers || []);
-                } catch (err) {
-                    console.error('Fetch error:', err);
-                    setError(err.message);
-                } finally {
-                    setLoading(false);
-                }
-            };
-
-            // Fetch config and containers on mount or endpoint change
-            useEffect(() => {
-                const init = async () => {
-                    // Fetch config first
-                    try {
-                        const response = await fetch(`${endpoint}/api/config`);
-                        if (response.ok) {
-                            const data = await response.json();
-                            console.log('Config loaded:', data);
-                            setCheckInterval(data.checkInterval);
-                        } else {
-                            // Fallback to default
-                            setCheckInterval(300);
-                        }
-                    } catch (err) {
-                        console.error('Failed to fetch config:', err);
-                        setCheckInterval(300); // Fallback
-                    }
-                    setConfigLoaded(true);
-                    
-                    // Then fetch containers
-                    await fetchContainers();
-                };
-                
-                init();
-            }, [endpoint]);
-
-            // Set up auto-refresh interval (only if checkInterval > 0)
-            useEffect(() => {
-                if (!configLoaded || checkInterval === null) return;
-                
-                // If checkInterval is 0, disable auto-refresh
-                if (checkInterval === 0) {
-                    console.log('Auto-refresh disabled');
-                    return;
-                }
-                
-                console.log(`Setting up auto-refresh: every ${checkInterval} seconds`);
-                const interval = setInterval(fetchContainers, checkInterval * 1000);
-                return () => {
-                    console.log('Clearing auto-refresh interval');
-                    clearInterval(interval);
-                };
-            }, [checkInterval, configLoaded, endpoint]);
-
-            const stats = {
-                total: containers.length,
-                updates: containers.filter(c => c.updateAvailable).length,
-                current: containers.filter(c => !c.updateAvailable).length
-            };
-
-            return (
-                <div className="app-container">
-                    <div className="header">
-                        <h1 className="title">DOCKER IMAGE MONITOR</h1>
-                        <p className="subtitle">Container Update Surveillance System</p>
-                        <div className="docker-endpoint">
-                            <div style={{fontSize: '0.7rem', color: 'rgba(0, 255, 255, 0.5)'}}>
-                                {checkInterval === null ? (
-                                    'Loading config...'
-                                ) : checkInterval === 0 ? (
-                                    <span style={{color: 'rgba(255, 107, 0, 0.7)'}}>
-                                        Auto-refresh: <strong>DISABLED</strong> (manual only)
-                                    </span>
-                                ) : (
-                                    `Auto-refresh: every ${checkInterval} seconds (${(checkInterval / 60).toFixed(1)} min)`
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="controls">
-                        <button className="btn btn-refresh" onClick={fetchContainers} disabled={loading}>
-                            {loading ? 'Scanning...' : 'Refresh Status'}
-                        </button>
-                    </div>
-
-                    {!loading && !error && containers.length > 0 && (
-                        <div className="status-bar">
-                            <div className="stat stat-total">
-                                <span className="stat-value">{stats.total}</span>
-                                <span className="stat-label">Total Containers</span>
-                            </div>
-                            <div className="stat stat-updates">
-                                <span className="stat-value">{stats.updates}</span>
-                                <span className="stat-label">Updates Available</span>
-                            </div>
-                            <div className="stat stat-current">
-                                <span className="stat-value">{stats.current}</span>
-                                <span className="stat-label">Up to Date</span>
-                            </div>
-                        </div>
-                    )}
-
-                    {loading && <div className="loading">Scanning Docker containers</div>}
-
-                    {error && (
-                        <div className="error">
-                            <div className="error-title">⚠ CONNECTION ERROR</div>
-                            <div>{error}</div>
-                            <div style={{marginTop: '15px', fontSize: '0.85rem'}}>
-                                Make sure the backend server is running on {endpoint}
-                            </div>
-                        </div>
-                    )}
-
-                    {!loading && !error && containers.length === 0 && (
-                        <div className="empty-state">
-                            <div className="empty-state-icon">🐳</div>
-                            <div>No containers detected</div>
-                            <div style={{fontSize: '0.85rem', marginTop: '10px'}}>
-                                Start some Docker containers or check your Docker connection
-                            </div>
-                        </div>
-                    )}
-
-					{!loading && !error && containers.length > 0 && (
-						<>
-							{/* Updates Available Section */}
-							{containers.filter(c => c.updateAvailable).length > 0 && (
-								<>
-									<div style={{
-										fontSize: '1.5rem',
-										fontWeight: '700',
-										color: 'var(--neon-orange)',
-										marginBottom: '20px',
-										marginTop: '20px',
-										textTransform: 'uppercase',
-										letterSpacing: '2px',
-										borderBottom: '2px solid var(--neon-orange)',
-										paddingBottom: '10px'
-									}}>
-										⚠ Updates Available ({containers.filter(c => c.updateAvailable).length})
-									</div>
-									<div className="container-grid">
-										{containers
-										.filter(c => c.updateAvailable)
-										.sort((a, b) => a.name.localeCompare(b.name))
-										.map((container, idx) => (
-												<div 
-													key={container.id} 
-													className="container-card has-update"
-													style={{animationDelay: `${idx * 0.1}s`}}
-												>
-													<div className="container-header">
-														<div className="container-name">{container.name}</div>
-														<div className="status-badge status-update">
-															⚠ Update
-														</div>
-													</div>
-													
-													<div className="container-info">
-														<div className="info-row">
-															<div className="info-label">Image</div>
-															<div className="info-value">{container.image}</div>
-														</div>
-														<div className="info-row">
-															<div className="info-label">Current</div>
-                                                            <div className="info-value">
-                                                                <span className="version-badge">{container.currentVersion || container.currentTag || 'unknown'}</span>
-															</div>
-														</div>
-														{container.updateAvailable && (
-															<div className="info-row">
-																<div className="info-label">Latest</div>
-                                                                <div className="info-value">
-                                                                    <span className="version-badge" style={{
-                                                                        borderColor: 'var(--neon-orange)',
-                                                                        background: 'rgba(255, 107, 0, 0.1)'
-                                                                    }}>
-                                                                        {container.latestVersion || container.latestTag || 'unknown'}
-                                                                    </span>
-																</div>
-															</div>
-														)}
-															{container.updateType && (
-																<div className="info-row">
-																	<div className="info-label">Type</div>
-																	<div className="info-value">
-																		<span className="version-badge" style={{
-																			borderColor: container.updateType === 'major' ? 'var(--neon-pink)' : 'var(--neon-orange)',
-																			color: container.updateType === 'major' ? 'var(--neon-pink)' : 'var(--neon-orange)'
-																		}}>
-																			{String(container.updateType).toUpperCase()}
-																		</span>
-																	</div>
-																</div>
-															)}
-														<div className="info-row">
-															<div className="info-label">Status</div>
-															<div className="info-value">{container.status}</div>
-														</div>
-													</div>
-												</div>
-											))}
-									</div>
-								</>
-							)}
-
-							{/* Up to Date Section */}
-							{containers.filter(c => !c.updateAvailable).length > 0 && (
-								<>
-									<div style={{
-										fontSize: '1.5rem',
-										fontWeight: '700',
-										color: 'var(--neon-green)',
-										marginBottom: '20px',
-										marginTop: '40px',
-										textTransform: 'uppercase',
-										letterSpacing: '2px',
-										borderBottom: '2px solid var(--neon-green)',
-										paddingBottom: '10px'
-									}}>
-										✓ Up to Date ({containers.filter(c => !c.updateAvailable).length})
-									</div>
-									<div className="container-grid">
-										{containers
-										.filter(c => !c.updateAvailable)
-										.sort((a, b) => a.name.localeCompare(b.name))
-										.map((container, idx) => (
-												<div 
-													key={container.id} 
-													className="container-card"
-													style={{animationDelay: `${idx * 0.1}s`}}
-												>
-													<div className="container-header">
-														<div className="container-name">{container.name}</div>
-														<div className="status-badge status-running">
-															✓ Current
-														</div>
-													</div>
-													
-													<div className="container-info">
-														<div className="info-row">
-															<div className="info-label">Image</div>
-															<div className="info-value">{container.image}</div>
-														</div>
-														<div className="info-row">
-															<div className="info-label">Current</div>
-															<div className="info-value">
-																<span className="version-badge">{container.currentVersion || container.currentTag || 'unknown'}</span>
-															</div>
-														</div>
-														<div className="info-row">
-															<div className="info-label">Status</div>
-															<div className="info-value">{container.status}</div>
-														</div>
-													</div>
-												</div>
-											))}
-									</div>
-								</>
-							)}
-						</>
-					)}
-                </div>
-            );
-        }
-
-        ReactDOM.render(<App />, document.getElementById('root'));
-    </script>
+    <script src="/app.js" defer></script>
 </body>
 </html>
-

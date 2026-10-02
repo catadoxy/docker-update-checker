@@ -134,6 +134,20 @@ app.get('/', (req, res) => {
     res.sendFile(filePath);
 });
 
+// The React app is prebuilt by esbuild (npm run build) into app.js.
+const appJsCandidates = [
+    path.join(__dirname, 'app.js'),
+    path.join(__dirname, '..', 'app.js'),
+];
+
+app.get('/app.js', (req, res) => {
+    const filePath = appJsCandidates.find((p) => fs.existsSync(p));
+    if (!filePath) {
+        return res.status(500).send('app.js not built - run `npm run build`');
+    }
+    res.type('application/javascript').sendFile(filePath);
+});
+
 app.get('/api', (req, res) => {
     res.json({
         name: 'Docker Update Checker API',

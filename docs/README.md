@@ -14,11 +14,11 @@ A modern, cyberpunk-themed web interface to monitor your Docker containers and c
 - 🔍 **Real-time monitoring** of all running Docker containers
 - 🆕 **Update detection** by comparing local image digests against the registry
 - 🐋 **Multi-registry support** - Docker Hub, `ghcr.io`, and `lscr.io`
-- 🏷️ **Version display** - shows the image's real version label instead of just `tag:latest`
-- 🎨 **Cyberpunk terminal aesthetic** with neon colors and animations
+- 🏷️ **Version display** - shows the image's real version label, plus a patch/minor/major bump type
+- 🎨 **Theme toggle** - cyberpunk by default, with a one-click light mode
 - 📊 **Statistics dashboard** showing containers status at a glance
 - 🔄 **Auto-refresh** refresh interval can be set (0 to disable autorefresh)
-- 🚀 **Fast and lightweight** - pure React frontend, minimal Node.js backend
+- 🚀 **Fast and lightweight** - React bundled locally (no CDN or in-browser Babel), minimal Node.js backend
 - 🐋 **Docker-compatible** - works with any Docker version
 
 ## 🖼️ Interface
@@ -158,6 +158,8 @@ docker-update-checker/
 │   ├── registry.js               # Registry client (auth, digests, tags, caching)
 │   ├── version.js                # Pure version/tag helpers
 │   └── start.sh                  # Local dev quick-start helper
+├── frontend/
+│   └── app.jsx                   # React app source (bundled to app.js by esbuild)
 ├── test/
 │   ├── version.test.js
 │   └── registry.test.js
@@ -168,7 +170,7 @@ docker-update-checker/
 ├── scripts/
 │   └── setup-docker-compose.sh   # Automated Docker Compose setup
 ├── .github/workflows/            # CI + Docker Hub publish
-├── docker-update-checker.html    # Single-file React frontend
+├── docker-update-checker.html    # HTML shell + styles + theme bootstrap
 ├── Dockerfile
 ├── docker-compose.yml
 └── package.json
@@ -178,9 +180,13 @@ docker-update-checker/
 
 ```bash
 npm install      # install dependencies
+npm run build    # bundle the React frontend into app.js
 npm test         # run the unit tests (node:test, no network needed)
 npm start        # start the backend on http://localhost:3456
 ```
+
+`app.js` is a build artifact and is not committed; the Docker build generates it
+in a separate esbuild stage. Use `npm run dev` to rebuild and run with nodemon.
 
 The backend is split into small modules so the update logic can be tested without
 Docker or network access: `version.js` (tag parsing/comparison) and `registry.js`

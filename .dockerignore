@@ -6,11 +6,14 @@ npm-debug.log
 .env
 .DS_Store
 
+# Build artifact (the builder stage generates it; never copy a stale one)
+app.js
+
 # Docs and helper scripts are not needed inside the image
 docs
 scripts
 src/start.sh
 *.md
 
-# NOTE: docker-update-checker.html is required by the Dockerfile.
+# NOTE: docker-update-checker.html and frontend/ ARE required by the Dockerfile.
 # Do NOT ignore *.html here or the build will fail.
