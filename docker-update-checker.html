@@ -657,6 +657,19 @@
 																</div>
 															</div>
 														)}
+															{container.updateType && (
+																<div className="info-row">
+																	<div className="info-label">Type</div>
+																	<div className="info-value">
+																		<span className="version-badge" style={{
+																			borderColor: container.updateType === 'major' ? 'var(--neon-pink)' : 'var(--neon-orange)',
+																			color: container.updateType === 'major' ? 'var(--neon-pink)' : 'var(--neon-orange)'
+																		}}>
+																			{String(container.updateType).toUpperCase()}
+																		</span>
+																	</div>
+																</div>
+															)}
 														<div className="info-row">
 															<div className="info-label">Status</div>
 															<div className="info-value">{container.status}</div>
