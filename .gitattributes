@@ -1,0 +1,13 @@
+# Normalize line endings to LF in the repository (Docker/Linux friendly),
+# regardless of the contributor's OS.
+* text=auto eol=lf
+
+# Shell scripts are always LF and executable
+*.sh text eol=lf
+
+# Binary assets must never be converted
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.gif binary
+*.ico binary
