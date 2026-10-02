@@ -2,6 +2,7 @@ node_modules
 npm-debug.log
 .git
 .gitignore
+.github
 .env
 .DS_Store
 

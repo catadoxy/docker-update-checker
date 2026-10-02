@@ -293,6 +293,16 @@ async function getLatestVersionInfo(image, currentTag) {
     return selectLatestVersion(tags, currentTag);
 }
 
+// Pure decision function: combines the digest check (floating tags) with the
+// version check (pinned tags) into the fields the UI consumes.
+function evaluateUpdate({ registrySupported, currentDigest, remoteDigest, versionInfo }) {
+    const digestChanged = !!(remoteDigest && currentDigest && remoteDigest !== currentDigest);
+    const newer = !!(versionInfo && versionInfo.newer);
+    const updateAvailable = !!(registrySupported && (digestChanged || newer));
+    const updateType = updateAvailable ? (newer ? versionInfo.bump : 'digest') : null;
+    return { updateAvailable, updateType, digestChanged, newer };
+}
+
 module.exports = {
     detectRegistry,
     buildImagePath,
@@ -301,4 +311,5 @@ module.exports = {
     getRemoteDigest,
     getRepositoryTags,
     getLatestVersionInfo,
+    evaluateUpdate,
 };

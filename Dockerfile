@@ -2,11 +2,9 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Copy package.json
-COPY package.json ./
-
-# Install dependencies
-RUN npm install --omit=dev
+# Copy manifests and install exact, reproducible dependencies
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev
 
 # Copy application files (server + modules live in src/ after the restructure)
 COPY src/ ./

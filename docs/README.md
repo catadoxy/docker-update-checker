@@ -154,19 +154,51 @@ docker compose up -d
 ```
 docker-update-checker/
 ├── src/
-│   ├── server.js                 # Express backend + registry logic
+│   ├── server.js                 # Express routes
+│   ├── registry.js               # Registry client (auth, digests, tags, caching)
+│   ├── version.js                # Pure version/tag helpers
 │   └── start.sh                  # Local dev quick-start helper
+├── test/
+│   ├── version.test.js
+│   └── registry.test.js
 ├── docs/
 │   ├── README.md
 │   ├── CHECK_INTERVAL_GUIDE.md
 │   └── assets/logo.jpg
 ├── scripts/
 │   └── setup-docker-compose.sh   # Automated Docker Compose setup
+├── .github/workflows/            # CI + Docker Hub publish
 ├── docker-update-checker.html    # Single-file React frontend
 ├── Dockerfile
 ├── docker-compose.yml
 └── package.json
 ```
+
+## 🛠️ Development
+
+```bash
+npm install      # install dependencies
+npm test         # run the unit tests (node:test, no network needed)
+npm start        # start the backend on http://localhost:3456
+```
+
+The backend is split into small modules so the update logic can be tested without
+Docker or network access: `version.js` (tag parsing/comparison) and `registry.js`
+(auth discovery, digests, tags, caching).
+
+## 📦 Releasing
+
+Releases are automated with GitHub Actions (`.github/workflows/publish.yml`):
+
+```bash
+git tag v1.1.0
+git push --tags
+```
+
+Pushing a `v*` tag runs the tests, builds the image, and pushes
+`catadoxy/docker-update-checker:v1.1.0` (+ `:latest`) to Docker Hub. This needs the
+repository secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`. You can also trigger
+it manually from the Actions tab (`workflow_dispatch`).
 
 ## 📝 License
 

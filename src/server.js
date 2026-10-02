@@ -9,6 +9,7 @@ const {
     parseImage,
     getRemoteDigest,
     getLatestVersionInfo,
+    evaluateUpdate,
 } = require('./registry');
 
 const app = express();
@@ -59,11 +60,14 @@ app.get('/api/containers', async (req, res) => {
                     newer = versionInfo.newer;
                 }
 
-                // A floating tag (latest, stable, ...) moved upstream...
-                const digestChanged = !!(remoteDigest && currentDigest && remoteDigest !== currentDigest);
-                // ...or a newer stable version exists for a pinned/floating version tag.
-                const updateAvailable = registrySupported && (digestChanged || newer);
-                const updateType = updateAvailable ? (newer ? bump : 'digest') : null;
+                // A floating tag (latest, stable, ...) may have moved upstream,
+                // or a pinned version tag may have a newer stable release.
+                const { updateAvailable, updateType } = evaluateUpdate({
+                    registrySupported,
+                    currentDigest,
+                    remoteDigest,
+                    versionInfo: { latest: latestVersion, bump, newer },
+                });
 
                 return {
                     id: containerInfo.Id.substring(0, 12),
