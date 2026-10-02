@@ -640,20 +640,20 @@
 														</div>
 														<div className="info-row">
 															<div className="info-label">Current</div>
-															<div className="info-value">
-																<span className="version-badge">{container.currentTag || 'unknown'}</span>
+                                                            <div className="info-value">
+                                                                <span className="version-badge">{container.currentVersion || container.currentTag || 'unknown'}</span>
 															</div>
 														</div>
 														{container.updateAvailable && (
 															<div className="info-row">
 																<div className="info-label">Latest</div>
-																<div className="info-value">
-																	<span className="version-badge" style={{
-																		borderColor: 'var(--neon-orange)',
-																		background: 'rgba(255, 107, 0, 0.1)'
-																	}}>
-																		{container.latestTag || 'unknown'}
-																	</span>
+                                                                <div className="info-value">
+                                                                    <span className="version-badge" style={{
+                                                                        borderColor: 'var(--neon-orange)',
+                                                                        background: 'rgba(255, 107, 0, 0.1)'
+                                                                    }}>
+                                                                        {container.latestVersion || container.latestTag || 'unknown'}
+                                                                    </span>
 																</div>
 															</div>
 														)}
@@ -709,7 +709,7 @@
 														<div className="info-row">
 															<div className="info-label">Current</div>
 															<div className="info-value">
-																<span className="version-badge">{container.currentTag || 'unknown'}</span>
+																<span className="version-badge">{container.currentVersion || container.currentTag || 'unknown'}</span>
 															</div>
 														</div>
 														<div className="info-row">
