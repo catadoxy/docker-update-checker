@@ -70,7 +70,7 @@ echo ""
 # Verify required files exist
 print_info "Checking required files..."
 
-REQUIRED_FILES=("docker-compose.yml" "Dockerfile" "package.json" "server.js" "docker-update-checker.html")
+REQUIRED_FILES=("docker-compose.yml" "Dockerfile" "package.json" "src/server.js" "docker-update-checker.html")
 MISSING_FILES=()
 
 for file in "${REQUIRED_FILES[@]}"; do

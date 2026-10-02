@@ -6,10 +6,10 @@ WORKDIR /app
 COPY package.json ./
 
 # Install dependencies
-RUN npm install --only=production
+RUN npm install --omit=dev
 
-# Copy application files
-COPY server.js ./
+# Copy application files (server lives in src/ after the restructure)
+COPY src/server.js ./
 COPY docker-update-checker.html ./
 
 # Expose the port

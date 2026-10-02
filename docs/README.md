@@ -5,10 +5,16 @@ A modern, cyberpunk-themed web interface to monitor your Docker containers and c
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Node](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen.svg)
 
+<p align="center">
+  <img src="assets/logo.jpg" alt="Docker Update Checker" width="420">
+</p>
+
 ## ✨ Features
 
 - 🔍 **Real-time monitoring** of all running Docker containers
-- 🆕 **Update detection** by comparing local images with Docker Hub
+- 🆕 **Update detection** by comparing local image digests against the registry
+- 🐋 **Multi-registry support** - Docker Hub, `ghcr.io`, and `lscr.io`
+- 🏷️ **Version display** - shows the image's real version label instead of just `tag:latest`
 - 🎨 **Cyberpunk terminal aesthetic** with neon colors and animations
 - 📊 **Statistics dashboard** showing containers status at a glance
 - 🔄 **Auto-refresh** refresh interval can be set (0 to disable autorefresh)
@@ -97,9 +103,10 @@ docker compose up -d
 
 ### Update detection not working
 
-- Some private registries may not be accessible
-- Images with custom registries (not Docker Hub) won't be checked
+- Private registries requiring authentication are not yet supported
+- Supported public registries: Docker Hub, `ghcr.io`, `lscr.io`
 - Images without tags or with SHA digests may show as "unknown"
+- Digest comparison can differ for multi-architecture images
 
 ## 🔒 Security Notes
 
@@ -126,8 +133,8 @@ docker compose up -d
            │ Docker SDK
            │
 ┌──────────▼──────────┐     ┌─────────────────┐
-│   Docker Socket     │────▶│  Docker Hub API │
-│  /var/run/docker    │     │  (registry)     │
+│   Docker Socket     │────▶│ Container       │
+│  /var/run/docker    │     │ Registry API    │
 └─────────────────────┘     └─────────────────┘
 ```
 
@@ -138,9 +145,28 @@ docker compose up -d
 3. For each container:
    - Extracts image name and tag
    - Gets the current image digest (SHA)
-   - Queries Docker Hub registry for the latest digest
-   - Compares digests to determine if update is available
-4. **Frontend** polls the API every 60 seconds and displays results
+   - Queries the registry for the digest and highest version tag
+   - Compares digests to determine if an update is available
+4. **Frontend** polls the API at the configured `CHECK_INTERVAL` and displays results
+
+## 📁 Project Structure
+
+```
+docker-update-checker/
+├── src/
+│   ├── server.js                 # Express backend + registry logic
+│   └── start.sh                  # Local dev quick-start helper
+├── docs/
+│   ├── README.md
+│   ├── CHECK_INTERVAL_GUIDE.md
+│   └── assets/logo.jpg
+├── scripts/
+│   └── setup-docker-compose.sh   # Automated Docker Compose setup
+├── docker-update-checker.html    # Single-file React frontend
+├── Dockerfile
+├── docker-compose.yml
+└── package.json
+```
 
 ## 📝 License
 
@@ -160,20 +186,20 @@ Fonts:
 
 ## 🐛 Known Issues
 
-- Private registries are not yet supported
 - Authentication for private images is not implemented
-- Only works with Docker Hub (not other registries like ghcr.io, gcr.io, etc.)
+- Supported registries: Docker Hub, `ghcr.io`, `lscr.io` (no `gcr.io`/`quay.io` yet)
+- Digest comparison may be inaccurate for multi-architecture images
 - Windows Docker Desktop may require additional configuration
 
 ## 🚀 Future Enhancements
 
+- [x] Multi-registry support (Docker Hub, ghcr.io, lscr.io)
 - [ ] Support for private registries
 - [ ] Authentication for private images
 - [ ] Update notifications via webhook
 - [ ] Container restart/update actions
 - [ ] Export reports
 - [ ] Filter and search capabilities
-- [ ] Multi-registry support (ghcr.io, gcr.io, quay.io)
 - [ ] Email/Slack notifications
 
 ## 💬 Feedback
