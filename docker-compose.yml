@@ -13,3 +13,11 @@ services:
       # Set to 0 to disable auto-refresh (manual refresh only)
       # Minimum recommended: 60 seconds to avoid overwhelming Docker Hub API
       - CHECK_INTERVAL=0
+      # ── Notifications (optional) ─────────────────────────────────────────
+      # Background scans send notifications when new updates appear.
+      # Requires CHECK_INTERVAL > 0 (any of these channels enables it):
+      # - NTFY_URL=https://ntfy.sh/your-topic
+      # - NTFY_TOKEN=tk_xxxxxxxxxxxx
+      # - DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
+      # - SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...
+      # - NOTIFY_WEBHOOK_URL=https://example.com/hooks/docker-updates

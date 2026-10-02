@@ -15,6 +15,7 @@ A modern, cyberpunk-themed web interface to monitor your Docker containers and c
 - 🆕 **Update detection** by comparing local image digests against the registry
 - 🐋 **Multi-registry support** - Docker Hub, `ghcr.io`, and `lscr.io`
 - 🏷️ **Version display** - shows the image's real version label, plus a patch/minor/major bump type
+- 🔔 **Notifications** - ntfy, Discord, Slack, or a generic webhook when new updates appear
 - 🎨 **Theme toggle** - cyberpunk by default, with a one-click light mode
 - 📊 **Statistics dashboard** showing containers status at a glance
 - 🔄 **Auto-refresh** refresh interval can be set (0 to disable autorefresh)
@@ -88,6 +89,39 @@ docker compose down
 docker compose up -d
 ```
 
+### 🔔 Notifications
+
+Set any of the following environment variables (and keep `CHECK_INTERVAL` above 0).
+The backend scans in the background and notifies you when a **new** update appears;
+it remembers what it has already sent, so you won't get repeat spam.
+
+| Variable | Channel |
+|---|---|
+| `NTFY_URL` (+ optional `NTFY_TOKEN`) | [ntfy](https://ntfy.sh) |
+| `DISCORD_WEBHOOK_URL` | Discord |
+| `SLACK_WEBHOOK_URL` | Slack |
+| `NOTIFY_WEBHOOK_URL` | Generic JSON webhook |
+
+Example:
+
+```yaml
+environment:
+  - CHECK_INTERVAL=3600
+  - NTFY_URL=https://ntfy.sh/my-docker-updates
+```
+
+The generic webhook receives:
+
+```json
+{
+  "title": "Docker updates available (2)",
+  "message": "- web (nginx:latest): 1.25.3 -> 1.27.0 [minor]",
+  "updates": [ { "name": "web", "image": "nginx:latest", "latestVersion": "1.27.0", "updateType": "minor" } ]
+}
+```
+
+De-duplication is in memory, so restarting the container may re-send the current set once.
+
 ## 🐛 Troubleshooting
 
 ### "Failed to connect to Docker"
@@ -154,9 +188,10 @@ docker compose up -d
 ```
 docker-update-checker/
 ├── src/
-│   ├── server.js                 # Express routes
+│   ├── server.js                 # Express routes + background scan scheduler
 │   ├── registry.js               # Registry client (auth, digests, tags, caching)
 │   ├── version.js                # Pure version/tag helpers
+│   ├── notify.js                 # Notification channels + dedupe
 │   └── start.sh                  # Local dev quick-start helper
 ├── frontend/
 │   └── app.jsx                   # React app source (bundled to app.js by esbuild)
@@ -227,18 +262,19 @@ Fonts:
 - Authentication for private images is not implemented
 - Supported registries: Docker Hub, `ghcr.io`, `lscr.io` (no `gcr.io`/`quay.io` yet)
 - Digest comparison may be inaccurate for multi-architecture images
+- Notification de-duplication is in memory, so a restart may resend the current set
 - Windows Docker Desktop may require additional configuration
 
 ## 🚀 Future Enhancements
 
 - [x] Multi-registry support (Docker Hub, ghcr.io, lscr.io)
+- [x] Notifications (ntfy, Discord, Slack, generic webhook)
 - [ ] Support for private registries
 - [ ] Authentication for private images
-- [ ] Update notifications via webhook
 - [ ] Container restart/update actions
 - [ ] Export reports
 - [ ] Filter and search capabilities
-- [ ] Email/Slack notifications
+- [ ] Email notifications
 
 ## 💬 Feedback
 
