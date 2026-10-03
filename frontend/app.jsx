@@ -3,6 +3,12 @@ import { createRoot } from 'react-dom/client';
 
 const THEME_KEY = 'docker-update-checker-theme';
 
+const THEMES = [
+    { id: 'cyberpunk', label: 'Cyberpunk' },
+    { id: 'light', label: 'Light' },
+    { id: 'dark', label: 'Dark' },
+];
+
 function readStoredTheme() {
     try {
         return localStorage.getItem(THEME_KEY) || 'cyberpunk';
@@ -170,12 +176,18 @@ function App() {
                 <button className="btn btn-refresh" onClick={fetchContainers} disabled={loading}>
                     {loading ? 'Scanning...' : 'Refresh Status'}
                 </button>
-                <button
-                    className="btn btn-theme"
-                    onClick={() => setTheme((t) => (t === 'light' ? 'cyberpunk' : 'light'))}
-                >
-                    {theme === 'light' ? '🌙 Cyberpunk' : '☀ Light'}
-                </button>
+                <div className="theme-switcher" role="group" aria-label="Theme">
+                    {THEMES.map((t) => (
+                        <button
+                            key={t.id}
+                            className={`theme-btn${theme === t.id ? ' active' : ''}`}
+                            onClick={() => setTheme(t.id)}
+                            aria-pressed={theme === t.id}
+                        >
+                            {t.label}
+                        </button>
+                    ))}
+                </div>
             </div>
 
             {!loading && !error && containers.length > 0 && (

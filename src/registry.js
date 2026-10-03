@@ -10,6 +10,8 @@ const TOKEN_CACHE_MAX_MS = 4 * 60 * 1000;
 const TAGS_TTL_MS = 10 * 60 * 1000;
 const DIGEST_TTL_MS = 2 * 60 * 1000;
 const RATE_LIMIT_BACKOFF_MS = 5 * 60 * 1000;
+const TAGS_PER_PAGE = 1000;
+const MAX_TAG_PAGES = 10;
 
 const authCache = new Map();
 const tokenCache = new Map();
@@ -94,6 +96,22 @@ function buildImagePath(rawImage, registryType) {
     return registryType === 'dockerhub' && !imagePath.includes('/')
         ? `library/${imagePath}`
         : imagePath;
+}
+
+// Parse an RFC5988 Link header for the rel="next" page, resolving a relative URL
+// against the registry origin. Returns null when there is no next page.
+function parseNextLink(linkHeader, apiBase) {
+    if (!linkHeader) return null;
+    const match = /<([^>]+)>\s*;\s*rel="?next"?/i.exec(linkHeader);
+    if (!match) return null;
+
+    const link = match[1];
+    if (/^https?:\/\//i.test(link)) return link;
+    try {
+        return new URL(link, apiBase).toString();
+    } catch {
+        return null;
+    }
 }
 
 // ─── Image Reference Parsing ──────────────────────────────────────────────────
@@ -271,11 +289,16 @@ async function getRepositoryTags(image) {
         const headers = { Accept: 'application/json' };
         if (token) headers.Authorization = `Bearer ${token}`;
 
-        const response = await axios.get(
-            `${registry.apiBase}/${repositoryPath}/tags/list`,
-            { headers, timeout: 5000 }
-        );
-        const tags = response.data.tags || [];
+        // Registries paginate tags/list (Docker Hub caps a page at 1000) and
+        // advertise the next page via a Link: rel="next" header.
+        const tags = [];
+        let url = `${registry.apiBase}/${repositoryPath}/tags/list?n=${TAGS_PER_PAGE}`;
+        for (let page = 0; page < MAX_TAG_PAGES && url; page++) {
+            const response = await axios.get(url, { headers, timeout: 5000 });
+            tags.push(...(response.data.tags || []));
+            url = parseNextLink(response.headers.link, registry.apiBase);
+        }
+
         cacheSet(tagsCache, key, tags, TAGS_TTL_MS);
         return tags;
     } catch (error) {
@@ -307,6 +330,7 @@ module.exports = {
     detectRegistry,
     buildImagePath,
     parseImage,
+    parseNextLink,
     getRegistryToken,
     getRemoteDigest,
     getRepositoryTags,

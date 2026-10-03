@@ -197,17 +197,36 @@
             box-shadow: 0 0 20px var(--neon-green);
         }
 
-        .btn-theme {
-            border-color: var(--neon-pink);
+        .theme-switcher {
+            display: inline-flex;
+            border: 2px solid var(--neon-pink);
+        }
+
+        .theme-btn {
+            padding: 12px 16px;
+            border: none;
+            background: transparent;
             color: var(--neon-pink);
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
 
-        .btn-theme::before {
+        .theme-btn + .theme-btn {
+            border-left: 1px solid var(--border-color);
+        }
+
+        .theme-btn:hover {
+            box-shadow: inset 0 0 20px rgba(255, 0, 255, 0.15);
+        }
+
+        .theme-btn.active {
             background: var(--neon-pink);
-        }
-
-        .btn-theme:hover {
-            box-shadow: 0 0 20px var(--neon-pink);
+            color: var(--darker-bg);
         }
 
         .status-bar {
@@ -553,6 +572,57 @@
 
         :root[data-theme="light"] .container-card:hover {
             box-shadow: 0 10px 40px rgba(14, 116, 144, 0.15);
+        }
+
+        /* ─── Dark theme ────────────────────────────────────────────────────── */
+        :root[data-theme="dark"] {
+            --neon-cyan: #38bdf8;
+            --neon-pink: #f472b6;
+            --neon-green: #22c55e;
+            --neon-orange: #fb923c;
+            --dark-bg: #0f172a;
+            --darker-bg: #0b1220;
+            --card-bg: rgba(30, 41, 59, 0.85);
+            --border-color: rgba(148, 163, 184, 0.25);
+        }
+
+        :root[data-theme="dark"] body {
+            color: #e2e8f0;
+        }
+
+        :root[data-theme="dark"] body::before {
+            opacity: 0.35;
+        }
+
+        :root[data-theme="dark"] body::after {
+            display: none;
+        }
+
+        :root[data-theme="dark"] .title {
+            text-shadow: none;
+            animation: none;
+        }
+
+        :root[data-theme="dark"] .subtitle {
+            color: rgba(226, 232, 240, 0.6);
+        }
+
+        :root[data-theme="dark"] .info-label {
+            color: rgba(226, 232, 240, 0.55);
+        }
+
+        :root[data-theme="dark"] .info-value {
+            color: #e2e8f0;
+        }
+
+        :root[data-theme="dark"] .empty-state,
+        :root[data-theme="dark"] .docker-endpoint {
+            color: rgba(226, 232, 240, 0.55);
+        }
+
+        :root[data-theme="dark"] .status-bar,
+        :root[data-theme="dark"] .container-card {
+            box-shadow: none;
         }
     </style>
 </head>

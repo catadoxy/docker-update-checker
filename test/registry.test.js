@@ -7,6 +7,7 @@ const {
     detectRegistry,
     buildImagePath,
     parseImage,
+    parseNextLink,
     evaluateUpdate,
 } = require('../src/registry');
 
@@ -30,6 +31,26 @@ test('buildImagePath adds the library prefix only for Docker Hub root images', (
     assert.equal(buildImagePath('library/nginx', 'dockerhub'), 'library/nginx');
     assert.equal(buildImagePath('user/app', 'dockerhub'), 'user/app');
     assert.equal(buildImagePath('ghcr.io/linuxserver/sonarr', 'ghcr'), 'linuxserver/sonarr');
+});
+
+test('parseNextLink resolves the rel="next" URL from a Link header', () => {
+    const next = parseNextLink(
+        '</v2/library/nginx/tags/list?last=1.30.1-otel&n=1000>; rel="next"',
+        'https://registry-1.docker.io/v2'
+    );
+    assert.equal(next, 'https://registry-1.docker.io/v2/library/nginx/tags/list?last=1.30.1-otel&n=1000');
+});
+
+test('parseNextLink returns null when there is no next page', () => {
+    assert.equal(parseNextLink(undefined, 'https://registry-1.docker.io/v2'), null);
+    assert.equal(parseNextLink('</x>; rel="prev"', 'https://registry-1.docker.io/v2'), null);
+});
+
+test('parseNextLink passes through absolute URLs', () => {
+    assert.equal(
+        parseNextLink('<https://ghcr.io/v2/a/b/tags/list?last=x&n=1000>; rel="next"', 'https://ghcr.io/v2'),
+        'https://ghcr.io/v2/a/b/tags/list?last=x&n=1000'
+    );
 });
 
 test('parseImage preserves registry ports and normalizes official images', () => {
