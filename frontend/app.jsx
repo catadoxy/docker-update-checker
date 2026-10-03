@@ -4,18 +4,125 @@ import { createRoot } from 'react-dom/client';
 const THEME_KEY = 'docker-update-checker-theme';
 
 const THEMES = [
-    { id: 'cyberpunk', label: 'Cyberpunk' },
-    { id: 'light', label: 'Light' },
     { id: 'dark', label: 'Dark' },
+    { id: 'light', label: 'Light' },
+    { id: 'cyberpunk', label: 'Cyberpunk' },
 ];
+
+const THEME_COLORS = { dark: '#0b0f19', light: '#f5f7fa', cyberpunk: '#060911' };
+
+const BUMP_LABEL = { major: 'Major', minor: 'Minor', patch: 'Patch', digest: 'Digest' };
 
 function readStoredTheme() {
     try {
-        return localStorage.getItem(THEME_KEY) || 'cyberpunk';
+        return localStorage.getItem(THEME_KEY) || 'dark';
     } catch {
-        return 'cyberpunk';
+        return 'dark';
     }
 }
+
+function formatTime(iso) {
+    if (!iso) return '';
+    const date = new Date(iso);
+    if (Number.isNaN(date.getTime())) return '';
+    return new Intl.DateTimeFormat(undefined, {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+    }).format(date);
+}
+
+function ThemeSwitcher({ theme, onChange }) {
+    return (
+        <div className="segmented" role="group" aria-label="Color theme">
+            {THEMES.map((t) => (
+                <button
+                    key={t.id}
+                    type="button"
+                    className="seg-btn"
+                    aria-pressed={theme === t.id}
+                    onClick={() => onChange(t.id)}
+                >
+                    {t.label}
+                </button>
+            ))}
+        </div>
+    );
+}
+
+function StatusPill({ update }) {
+    return (
+        <span className={`pill ${update ? 'pill-update' : 'pill-ok'}`}>
+            <span className="dot" aria-hidden="true" />
+            {update ? 'Update' : 'Current'}
+        </span>
+    );
+}
+
+function ContainerCard({ container, hasUpdate }) {
+    const current = container.currentVersion || container.currentTag || 'unknown';
+    const bump = container.updateType ? BUMP_LABEL[container.updateType] || container.updateType : null;
+
+    return (
+        <article className={`card${hasUpdate ? ' card-update' : ''}`}>
+            <div className="card-head">
+                <h3 className="card-name" title={container.name}>
+                    {container.name}
+                </h3>
+                <StatusPill update={hasUpdate} />
+            </div>
+
+            <dl className="meta">
+                <div className="row">
+                    <dt>Image</dt>
+                    <dd className="mono" title={container.image}>
+                        {container.image}
+                    </dd>
+                </div>
+                <div className="row">
+                    <dt>Version</dt>
+                    <dd>
+                        <span className="versions">
+                            <span className="ver mono">{current}</span>
+                            {hasUpdate && (
+                                <>
+                                    <span className="arrow" aria-hidden="true">
+                                        →
+                                    </span>
+                                    <span className="ver ver-new mono">
+                                        {container.latestVersion || 'unknown'}
+                                    </span>
+                                    {bump && <span className="chip">{bump}</span>}
+                                </>
+                            )}
+                        </span>
+                    </dd>
+                </div>
+                <div className="row">
+                    <dt>Status</dt>
+                    <dd>{container.status}</dd>
+                </div>
+            </dl>
+        </article>
+    );
+}
+
+const MARK = (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path
+            d="M12 2.5 20.5 7v10L12 21.5 3.5 17V7L12 2.5Z"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinejoin="round"
+        />
+        <path
+            d="M3.5 7 12 11.5 20.5 7M12 11.5V21.5"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinejoin="round"
+        />
+    </svg>
+);
 
 function App() {
     const [containers, setContainers] = useState([]);
@@ -25,10 +132,13 @@ function App() {
     const [checkInterval, setCheckInterval] = useState(null);
     const [configLoaded, setConfigLoaded] = useState(false);
     const [theme, setTheme] = useState(readStoredTheme);
+    const [query, setQuery] = useState('');
+    const [lastUpdated, setLastUpdated] = useState(null);
 
-    // Apply + persist the selected theme on <html data-theme="...">.
     useEffect(() => {
         document.documentElement.setAttribute('data-theme', theme);
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', THEME_COLORS[theme] || THEME_COLORS.dark);
         try {
             localStorage.setItem(THEME_KEY, theme);
         } catch {
@@ -42,18 +152,13 @@ function App() {
 
         try {
             const response = await fetch(`${endpoint}/api/containers`);
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
+            if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
 
             const data = await response.json();
-
-            if (data.error) {
-                throw new Error(data.error);
-            }
+            if (data.error) throw new Error(data.error);
 
             setContainers(data.containers || []);
+            setLastUpdated(data.timestamp || new Date().toISOString());
         } catch (err) {
             console.error('Fetch error:', err);
             setError(err.message);
@@ -84,176 +189,181 @@ function App() {
     }, [endpoint]);
 
     useEffect(() => {
-        if (!configLoaded || checkInterval === null) return;
-        if (checkInterval === 0) return; // auto-refresh disabled
-
+        if (!configLoaded || checkInterval === null || checkInterval === 0) return;
         const interval = setInterval(fetchContainers, checkInterval * 1000);
         return () => clearInterval(interval);
     }, [checkInterval, configLoaded, endpoint]);
 
-    const stats = {
-        total: containers.length,
-        updates: containers.filter((c) => c.updateAvailable).length,
-        current: containers.filter((c) => !c.updateAvailable).length,
-    };
+    const q = query.trim().toLowerCase();
+    const matches = (c) =>
+        !q || c.name.toLowerCase().includes(q) || (c.image || '').toLowerCase().includes(q);
+    const byName = (a, b) => a.name.localeCompare(b.name);
 
-    const updates = containers.filter((c) => c.updateAvailable);
-    const upToDate = containers.filter((c) => !c.updateAvailable);
+    const visible = containers.filter(matches);
+    const updates = visible.filter((c) => c.updateAvailable).sort(byName);
+    const upToDate = visible.filter((c) => !c.updateAvailable).sort(byName);
 
-    const renderCard = (container, idx, hasUpdate) => (
-        <div
-            key={container.id}
-            className={`container-card${hasUpdate ? ' has-update' : ''}`}
-            style={{ animationDelay: `${idx * 0.1}s` }}
-        >
-            <div className="container-header">
-                <div className="container-name">{container.name}</div>
-                <div className={`status-badge ${hasUpdate ? 'status-update' : 'status-running'}`}>
-                    {hasUpdate ? '⚠ Update' : '✓ Current'}
-                </div>
-            </div>
+    const totalUpdates = containers.filter((c) => c.updateAvailable).length;
 
-            <div className="container-info">
-                <div className="info-row">
-                    <div className="info-label">Image</div>
-                    <div className="info-value">{container.image}</div>
-                </div>
-                <div className="info-row">
-                    <div className="info-label">Current</div>
-                    <div className="info-value">
-                        <span className="version-badge">
-                            {container.currentVersion || container.currentTag || 'unknown'}
-                        </span>
-                    </div>
-                </div>
-                {hasUpdate && (
-                    <div className="info-row">
-                        <div className="info-label">Latest</div>
-                        <div className="info-value">
-                            <span className="version-badge version-badge-latest">
-                                {container.latestVersion || 'unknown'}
-                            </span>
-                        </div>
-                    </div>
-                )}
-                {hasUpdate && container.updateType && (
-                    <div className="info-row">
-                        <div className="info-label">Type</div>
-                        <div className="info-value">
-                            <span className={`version-badge bump-${container.updateType}`}>
-                                {String(container.updateType).toUpperCase()}
-                            </span>
-                        </div>
-                    </div>
-                )}
-                <div className="info-row">
-                    <div className="info-label">Status</div>
-                    <div className="info-value">{container.status}</div>
-                </div>
-            </div>
-        </div>
-    );
+    const refreshLabel =
+        checkInterval === null
+            ? 'Loading…'
+            : checkInterval === 0
+              ? 'Auto-refresh off'
+              : `Auto-refresh every ${checkInterval}s`;
 
     return (
-        <div className="app-container">
-            <div className="header">
-                <h1 className="title">DOCKER IMAGE MONITOR</h1>
-                <p className="subtitle">Container Update Surveillance System</p>
-                <div className="docker-endpoint">
-                    {checkInterval === null ? (
-                        'Loading config...'
-                    ) : checkInterval === 0 ? (
-                        <span className="endpoint-status disabled">
-                            Auto-refresh: <strong>DISABLED</strong> (manual only)
+        <div className="shell">
+            <a className="skip" href="#main">
+                Skip to content
+            </a>
+
+            <header className="appbar">
+                <div className="appbar-inner">
+                    <div className="brand">
+                        <span className="mark" aria-hidden="true">
+                            {MARK}
                         </span>
-                    ) : (
-                        `Auto-refresh: every ${checkInterval} seconds (${(checkInterval / 60).toFixed(1)} min)`
-                    )}
-                </div>
-            </div>
+                        <span className="brand-text">
+                            <h1 className="brand-name">Docker Update Checker</h1>
+                            <span className="brand-sub">Container update monitor</span>
+                        </span>
+                    </div>
 
-            <div className="controls">
-                <button className="btn btn-refresh" onClick={fetchContainers} disabled={loading}>
-                    {loading ? 'Scanning...' : 'Refresh Status'}
-                </button>
-                <div className="theme-switcher" role="group" aria-label="Theme">
-                    {THEMES.map((t) => (
+                    <div className="appbar-right">
+                        <span className="scan-meta">
+                            {refreshLabel}
+                            {lastUpdated ? ` · last scan ${formatTime(lastUpdated)}` : ''}
+                        </span>
+                        <ThemeSwitcher theme={theme} onChange={setTheme} />
                         <button
-                            key={t.id}
-                            className={`theme-btn${theme === t.id ? ' active' : ''}`}
-                            onClick={() => setTheme(t.id)}
-                            aria-pressed={theme === t.id}
+                            type="button"
+                            className="btn btn-primary"
+                            onClick={fetchContainers}
+                            disabled={loading}
                         >
-                            {t.label}
+                            {loading ? 'Scanning…' : 'Refresh'}
                         </button>
-                    ))}
-                </div>
-            </div>
-
-            {!loading && !error && containers.length > 0 && (
-                <div className="status-bar">
-                    <div className="stat stat-total">
-                        <span className="stat-value">{stats.total}</span>
-                        <span className="stat-label">Total Containers</span>
-                    </div>
-                    <div className="stat stat-updates">
-                        <span className="stat-value">{stats.updates}</span>
-                        <span className="stat-label">Updates Available</span>
-                    </div>
-                    <div className="stat stat-current">
-                        <span className="stat-value">{stats.current}</span>
-                        <span className="stat-label">Up to Date</span>
                     </div>
                 </div>
-            )}
+            </header>
 
-            {loading && <div className="loading">Scanning Docker containers</div>}
+            <main className="main" id="main">
+                <section className="stats" aria-label="Summary">
+                    <div className="stat">
+                        <span className="stat-num">{containers.length}</span>
+                        <span className="stat-label">Containers</span>
+                    </div>
+                    <div className={`stat${totalUpdates > 0 ? ' stat-updates' : ''}`}>
+                        <span className="stat-num">{totalUpdates}</span>
+                        <span className="stat-label">Updates available</span>
+                    </div>
+                    <div className="stat">
+                        <span className="stat-num">{containers.length - totalUpdates}</span>
+                        <span className="stat-label">Up to date</span>
+                    </div>
+                </section>
 
-            {error && (
-                <div className="error">
-                    <div className="error-title">⚠ CONNECTION ERROR</div>
-                    <div>{error}</div>
-                    <div className="error-hint">
-                        Make sure the backend server is running on {endpoint}
+                {containers.length > 0 && (
+                    <div className="toolbar">
+                        <label className="search">
+                            <svg
+                                width="15"
+                                height="15"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                aria-hidden="true"
+                            >
+                                <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+                                <path
+                                    d="m20 20-3.5-3.5"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                />
+                            </svg>
+                            <input
+                                type="search"
+                                value={query}
+                                onChange={(e) => setQuery(e.target.value)}
+                                placeholder="Filter by name or image…"
+                                aria-label="Filter containers"
+                                autoComplete="off"
+                                spellCheck={false}
+                            />
+                        </label>
+                        {q ? (
+                            <span className="toolbar-count">
+                                {visible.length} of {containers.length}
+                            </span>
+                        ) : null}
                     </div>
-                </div>
-            )}
+                )}
 
-            {!loading && !error && containers.length === 0 && (
-                <div className="empty-state">
-                    <div className="empty-state-icon">🐳</div>
-                    <div>No containers detected</div>
-                    <div className="empty-state-hint">
-                        Start some Docker containers or check your Docker connection
+                {loading && containers.length === 0 && (
+                    <div className="state" aria-live="polite">
+                        <span className="spinner" aria-hidden="true" />
+                        <p className="state-text">Scanning containers…</p>
                     </div>
-                </div>
-            )}
+                )}
 
-            {!loading && !error && updates.length > 0 && (
-                <>
-                    <div className="section-title section-title-updates">
-                        ⚠ Updates Available ({updates.length})
+                {error && (
+                    <div className="state state-error" role="alert">
+                        <p className="state-title">Can’t reach the Docker daemon</p>
+                        <p className="state-text">{error}</p>
+                        <p className="state-hint">
+                            Check that Docker is running and that /var/run/docker.sock is mounted,
+                            then refresh.
+                        </p>
                     </div>
-                    <div className="container-grid">
-                        {updates
-                            .sort((a, b) => a.name.localeCompare(b.name))
-                            .map((c, idx) => renderCard(c, idx, true))}
-                    </div>
-                </>
-            )}
+                )}
 
-            {!loading && !error && upToDate.length > 0 && (
-                <>
-                    <div className="section-title section-title-current">
-                        ✓ Up to Date ({upToDate.length})
+                {!loading && !error && containers.length === 0 && (
+                    <div className="state">
+                        <span className="state-emoji" aria-hidden="true">
+                            🐳
+                        </span>
+                        <p className="state-title">No containers found</p>
+                        <p className="state-text">
+                            Start some containers, or confirm this app can reach the Docker socket.
+                        </p>
                     </div>
-                    <div className="container-grid">
-                        {upToDate
-                            .sort((a, b) => a.name.localeCompare(b.name))
-                            .map((c, idx) => renderCard(c, idx, false))}
+                )}
+
+                {!error && updates.length > 0 && (
+                    <section className="section section-updates">
+                        <div className="section-head">
+                            <h2 className="section-title">Updates Available</h2>
+                            <span className="section-count">{updates.length}</span>
+                        </div>
+                        <div className="grid">
+                            {updates.map((c) => (
+                                <ContainerCard key={c.id} container={c} hasUpdate />
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                {!error && upToDate.length > 0 && (
+                    <section className="section">
+                        <div className="section-head">
+                            <h2 className="section-title">Up to Date</h2>
+                            <span className="section-count">{upToDate.length}</span>
+                        </div>
+                        <div className="grid">
+                            {upToDate.map((c) => (
+                                <ContainerCard key={c.id} container={c} hasUpdate={false} />
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                {!error && containers.length > 0 && visible.length === 0 && (
+                    <div className="state">
+                        <p className="state-text">No containers match “{query}”.</p>
                     </div>
-                </>
-            )}
+                )}
+            </main>
         </div>
     );
 }

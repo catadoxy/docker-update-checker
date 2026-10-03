@@ -16,7 +16,7 @@ A modern web interface to monitor your Docker containers and check for available
 - 🐋 **Multi-registry support** - Docker Hub, `ghcr.io`, and `lscr.io`, with auth discovered per registry
 - 🏷️ **Version display** - shows the image's real version label, plus a patch/minor/major bump type
 - 🔔 **Notifications** - ntfy, Discord, Slack, or a generic webhook when new updates appear
-- 🎨 **Three themes** - Cyberpunk (default), Light, and Dark
+- 🎨 **Three themes** - Dark (default), Light, and Cyberpunk
 - 📊 **Statistics dashboard** showing container status at a glance
 - 🔄 **Auto-refresh** interval can be set (`0` to disable)
 - 🚀 **Fast and lightweight** - React bundled locally (no CDN or in-browser Babel), minimal Node.js backend
