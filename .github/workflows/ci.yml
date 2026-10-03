@@ -29,6 +29,6 @@ jobs:
         with:
           context: .
           push: false
-          tags: catadoxy/docker-update-checker:ci
+          tags: ghcr.io/${{ github.repository }}:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max

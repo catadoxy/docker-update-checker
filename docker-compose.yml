@@ -1,6 +1,7 @@
 services:
   docker-update-checker:
-    image: catadoxy/docker-update-checker:latest
+    # Pull the published image, or comment this out and use `build: .` instead
+    image: ghcr.io/catadoxy/docker-update-checker:latest
     container_name: docker-update-checker
     ports:
       - "3456:3456"

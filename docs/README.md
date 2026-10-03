@@ -43,7 +43,7 @@ The interface features:
 ```yaml
    services:
      docker-update-checker:
-       image: catadoxy/docker-update-checker:latest
+       image: ghcr.io/catadoxy/docker-update-checker:latest
        container_name: docker-update-checker
        ports:
          - "3456:3456"
@@ -204,7 +204,7 @@ docker-update-checker/
 │   └── assets/logo.jpg
 ├── scripts/
 │   └── setup-docker-compose.sh   # Automated Docker Compose setup
-├── .github/workflows/            # CI + Docker Hub publish
+├── .github/workflows/            # CI + GitHub Container Registry publish
 ├── docker-update-checker.html    # HTML shell + styles + theme bootstrap
 ├── Dockerfile
 ├── docker-compose.yml
@@ -237,9 +237,25 @@ git push --tags
 ```
 
 Pushing a `v*` tag runs the tests, builds the image, and pushes
-`catadoxy/docker-update-checker:v1.1.0` (+ `:latest`) to Docker Hub. This needs the
-repository secrets `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN`. You can also trigger
-it manually from the Actions tab (`workflow_dispatch`).
+`ghcr.io/catadoxy/docker-update-checker:v1.1.0` (+ `:latest`) to the GitHub
+Container Registry. It authenticates with the built-in `GITHUB_TOKEN`, so **no
+repository secrets are needed**. You can also trigger it manually from the Actions
+tab (`workflow_dispatch`).
+
+> **One-time setup:** ghcr.io packages start out private. After the first publish,
+> open the repo's **Packages → docker-update-checker → Package settings** and change
+> its visibility to **Public** so anonymous pulls work.
+
+### Building locally instead
+
+If you'd rather not use the registry, build from source:
+
+```bash
+git clone https://github.com/catadoxy/docker-update-checker.git
+cd docker-update-checker
+# In docker-compose.yml, replace the `image:` line with `build: .`
+docker compose up -d --build
+```
 
 ## 📝 License
 

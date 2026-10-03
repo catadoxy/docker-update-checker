@@ -8,7 +8,7 @@ By default, the app checks for updates every **5 minutes (300 seconds)**. You ca
 
 **Special value**: Set `CHECK_INTERVAL=0` to **disable auto-refresh** completely. The app will only check for updates when you manually click the "Refresh Status" button.
 
-**Installation**: This guide assumes you're using the Docker Hub image `catadoxy/docker-update-checker:latest`. If you're building from source, see Method 3 below.
+**Installation**: This guide assumes you're using the published image `ghcr.io/catadoxy/docker-update-checker:latest`. If you're building from source, see Method 3 below.
 
 ## ⚙️ Configuration Methods
 
@@ -19,7 +19,7 @@ Edit your `docker-compose.yml` file:
 ```yaml
 services:
   docker-update-checker:
-    image: catadoxy/docker-update-checker:latest
+    image: ghcr.io/catadoxy/docker-update-checker:latest
     container_name: docker-update-checker
     ports:
       - "3456:3456"
@@ -68,19 +68,19 @@ docker run -d \
   -p 3456:3456 \
   -v /var/run/docker.sock:/var/run/docker.sock:ro \
   -e CHECK_INTERVAL=300 \
-  catadoxy/docker-update-checker:latest
+  ghcr.io/catadoxy/docker-update-checker:latest
 ```
 
 ### Method 3: Building from Source (Advanced)
 
-If you're building from source instead of using the Docker Hub image:
+If you're building from source instead of using the published image:
 
 ```bash
 git clone https://github.com/catadoxy/docker-update-checker.git
 cd docker-update-checker
 
 # Edit docker-compose.yml:
-# Change: image: catadoxy/docker-update-checker:latest
+# Change: image: ghcr.io/catadoxy/docker-update-checker:latest
 # To: build: .
 
 # Then edit the environment variable:
@@ -192,7 +192,7 @@ Auto-refresh: DISABLED (manual only)
 ```yaml
 services:
   docker-update-checker:
-    image: catadoxy/docker-update-checker:latest
+    image: ghcr.io/catadoxy/docker-update-checker:latest
     container_name: docker-update-checker
     ports:
       - "3456:3456"
