@@ -159,7 +159,7 @@ app.get('/app.js', (req, res) => {
 app.get('/api', (req, res) => {
     res.json({
         name: 'Docker Update Checker API',
-        version: '1.0.0',
+        version: '1.1.0',
         endpoints: {
             containers: '/api/containers',
             config: '/api/config',

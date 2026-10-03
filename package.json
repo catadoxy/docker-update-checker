@@ -1,6 +1,6 @@
 {
   "name": "docker-update-checker",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Modern web interface to check for Docker container updates",
   "main": "src/server.js",
   "scripts": {
