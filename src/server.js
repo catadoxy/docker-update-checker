@@ -31,6 +31,7 @@ async function scanContainers() {
 
             const imageName = inspect.Config.Image;
             const { image, tag } = parseImage(imageName);
+            const digestPinned = imageName.includes('@');
 
             // Local digest - used only to detect if a floating tag moved
             const imageDetails = await docker.getImage(inspect.Image).inspect();
@@ -49,7 +50,7 @@ async function scanContainers() {
             let bump = null;
             let newer = false;
 
-            if (registrySupported) {
+            if (registrySupported && !digestPinned) {
                 const [digest, versionInfo] = await Promise.all([
                     getRemoteDigest(image, tag),
                     getLatestVersionInfo(image, tag),
@@ -64,6 +65,7 @@ async function scanContainers() {
                 registrySupported,
                 currentDigest,
                 remoteDigest,
+                digestPinned,
                 versionInfo: { latest: latestVersion, bump, newer },
             });
 
@@ -159,7 +161,7 @@ app.get('/app.js', (req, res) => {
 app.get('/api', (req, res) => {
     res.json({
         name: 'Docker Update Checker API',
-        version: '1.1.0',
+        version: '1.1.1',
         endpoints: {
             containers: '/api/containers',
             config: '/api/config',

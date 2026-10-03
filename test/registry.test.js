@@ -104,6 +104,18 @@ test('evaluateUpdate never flags updates for unsupported registries', () => {
     assert.equal(result.updateType, null);
 });
 
+test('evaluateUpdate never flags digest-pinned images', () => {
+    const result = evaluateUpdate({
+        registrySupported: true,
+        currentDigest: 'sha256:aaa',
+        remoteDigest: 'sha256:bbb',
+        versionInfo: { newer: true, bump: 'minor' },
+        digestPinned: true,
+    });
+    assert.equal(result.updateAvailable, false);
+    assert.equal(result.updateType, null);
+});
+
 test('evaluateUpdate ignores digest comparison when a local digest is missing', () => {
     const result = evaluateUpdate({
         registrySupported: true,

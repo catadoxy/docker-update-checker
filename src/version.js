@@ -76,21 +76,47 @@ function bumpType(current, latest) {
     return null; // equal
 }
 
-// Pick the newest stable tag that is a meaningful update for `currentTag`.
-// Only tags sharing the same build variant (e.g. -alpine) are considered;
-// prereleases are ignored.
-function selectLatestVersion(tags, currentTag) {
-    const stable = tags.filter((t) => {
-        const p = parseVersion(t);
-        return p && !p.prerelease;
-    });
+// Reject tags that are technically numeric but are really build numbers, dates
+// or other noise (e.g. 9799770991, 20201215.17), which would otherwise look
+// like enormous versions.
+function isPlausibleVersion(parsed) {
+    if (!parsed) return false;
+    if (parsed.parts.length > 4) return false;
+    return parsed.parts.every((n) => Number.isFinite(n) && n <= 99999);
+}
 
+// An exact, fully-pinned version such as "1.25.3" or "7.2.4-alpine". Partial
+// tags like "16" or "7-alpine" float within their line and are handled by the
+// digest comparison instead.
+function isPinnedVersion(parsed) {
+    return !!parsed && parsed.parts.length >= 3;
+}
+
+// Pick the newest stable tag relevant to `currentTag`.
+//
+// - Floating tags (latest, stable, "16", "7-alpine") float within their line, so
+//   the digest comparison is the source of truth. We only suggest a display
+//   version and never report a version update.
+// - Exact pinned tags (1.25.3) are compared within the SAME MAJOR version and the
+//   same variant (e.g. -alpine), unless `checkMajor` is enabled.
+// Prereleases and implausible tags are ignored.
+function selectLatestVersion(tags, currentTag, options = {}) {
+    const checkMajor = options.checkMajor === true;
     const current = parseVersion(currentTag);
 
-    // Floating tag (latest, stable, edge...): report the newest stable version
-    // for display, but let digest comparison decide if something changed.
+    const stable = tags.filter((t) => {
+        const p = parseVersion(t);
+        return p && !p.prerelease && isPlausibleVersion(p);
+    });
+
+    // Non-version floating tag (latest, stable, edge...): just suggest a sane
+    // display version and let digest comparison decide if anything changed.
     if (!current) {
-        const sorted = sortVersionsDesc(stable);
+        const candidates = stable.filter((t) => {
+            const p = parseVersion(t);
+            return p.variant === null && p.parts.length >= 2;
+        });
+        const sorted = sortVersionsDesc(candidates);
         return { latest: sorted[0] || null, bump: null, newer: false };
     }
 
@@ -99,7 +125,18 @@ function selectLatestVersion(tags, currentTag) {
         return p.variant === current.variant;
     });
 
-    const latest = sortVersionsDesc(sameVariant)[0] || null;
+    // Stay within the current major line unless explicitly asked to cross it.
+    const pool = checkMajor
+        ? sameVariant
+        : sameVariant.filter((t) => parseVersion(t).parts[0] === current.parts[0]);
+
+    const latest = sortVersionsDesc(pool)[0] || null;
+
+    // Partial tag: floats within its line, digest comparison covers it.
+    if (!isPinnedVersion(current)) {
+        return { latest, bump: null, newer: false };
+    }
+
     if (!latest) return { latest: null, bump: null, newer: false };
 
     const bump = bumpType(current, parseVersion(latest));
@@ -110,6 +147,8 @@ module.exports = {
     isPreReleaseSuffix,
     parseVersion,
     isVersionTag,
+    isPlausibleVersion,
+    isPinnedVersion,
     compareParts,
     sortVersionsDesc,
     bumpType,

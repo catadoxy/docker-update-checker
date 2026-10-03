@@ -22,3 +22,7 @@ services:
       # - DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...
       # - SLACK_WEBHOOK_URL=https://hooks.slack.com/services/...
       # - NOTIFY_WEBHOOK_URL=https://example.com/hooks/docker-updates
+      # ── Version checking ─────────────────────────────────────────────────
+      # By default only same-major updates are flagged. Set to true to also
+      # flag major-version upgrades (e.g. postgres 16 -> 17).
+      # - CHECK_MAJOR=false

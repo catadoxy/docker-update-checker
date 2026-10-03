@@ -313,15 +313,18 @@ async function getRepositoryTags(image) {
 async function getLatestVersionInfo(image, currentTag) {
     const tags = await getRepositoryTags(image);
     if (!tags) return { latest: null, bump: null, newer: false };
-    return selectLatestVersion(tags, currentTag);
+    return selectLatestVersion(tags, currentTag, {
+        checkMajor: process.env.CHECK_MAJOR === 'true',
+    });
 }
 
 // Pure decision function: combines the digest check (floating tags) with the
-// version check (pinned tags) into the fields the UI consumes.
-function evaluateUpdate({ registrySupported, currentDigest, remoteDigest, versionInfo }) {
+// version check (pinned tags) into the fields the UI consumes. Images pinned by
+// digest (@sha256:...) are never flagged, since the user explicitly locked them.
+function evaluateUpdate({ registrySupported, currentDigest, remoteDigest, versionInfo, digestPinned = false }) {
     const digestChanged = !!(remoteDigest && currentDigest && remoteDigest !== currentDigest);
     const newer = !!(versionInfo && versionInfo.newer);
-    const updateAvailable = !!(registrySupported && (digestChanged || newer));
+    const updateAvailable = !!(registrySupported && !digestPinned && (digestChanged || newer));
     const updateType = updateAvailable ? (newer ? versionInfo.bump : 'digest') : null;
     return { updateAvailable, updateType, digestChanged, newer };
 }

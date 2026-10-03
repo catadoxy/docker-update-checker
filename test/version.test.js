@@ -6,6 +6,8 @@ const assert = require('node:assert/strict');
 const {
     parseVersion,
     isVersionTag,
+    isPlausibleVersion,
+    isPinnedVersion,
     bumpType,
     selectLatestVersion,
 } = require('../src/version');
@@ -49,8 +51,27 @@ test('bumpType classifies major/minor/patch and rejects older/equal', () => {
     assert.equal(bumpType(parseVersion('1.2.3'), parseVersion('1.2.2')), null);
 });
 
-test('selectLatestVersion flags a major bump across the same (no) variant', () => {
-    const info = selectLatestVersion(['1.2.3', '1.2.4', '1.3.0', '2.0.0', 'latest'], '1.2.3');
+test('isPlausibleVersion rejects build numbers and dates, accepts real versions', () => {
+    assert.equal(isPlausibleVersion(parseVersion('9799770991')), false);
+    assert.equal(isPlausibleVersion(parseVersion('20201215.17')), false);
+    assert.equal(isPlausibleVersion(parseVersion('1.2.3')), true);
+    assert.equal(isPlausibleVersion(parseVersion('2024.10.1')), true);
+});
+
+test('isPinnedVersion distinguishes exact versions from partial tags', () => {
+    assert.equal(isPinnedVersion(parseVersion('7.2.4')), true);
+    assert.equal(isPinnedVersion(parseVersion('1.25.3-alpine')), true);
+    assert.equal(isPinnedVersion(parseVersion('16')), false);
+    assert.equal(isPinnedVersion(parseVersion('7-alpine')), false);
+});
+
+test('selectLatestVersion stays within the pinned major by default', () => {
+    const info = selectLatestVersion(['1.2.3', '1.2.4', '1.3.0', '2.0.0'], '1.2.3');
+    assert.deepEqual(info, { latest: '1.3.0', bump: 'minor', newer: true });
+});
+
+test('selectLatestVersion can cross majors when checkMajor is enabled', () => {
+    const info = selectLatestVersion(['1.2.3', '1.2.4', '2.0.0'], '1.2.3', { checkMajor: true });
     assert.deepEqual(info, { latest: '2.0.0', bump: 'major', newer: true });
 });
 
@@ -63,8 +84,18 @@ test('selectLatestVersion only compares within the same variant', () => {
 });
 
 test('selectLatestVersion ignores prereleases', () => {
-    const info = selectLatestVersion(['1.3.0', '2.0.0', '1.2.4-rc1'], '1.2.3');
-    assert.deepEqual(info, { latest: '2.0.0', bump: 'major', newer: true });
+    const info = selectLatestVersion(['1.3.0', '1.2.4-rc1'], '1.2.3');
+    assert.deepEqual(info, { latest: '1.3.0', bump: 'minor', newer: true });
+});
+
+test('selectLatestVersion ignores implausible build-number tags', () => {
+    const info = selectLatestVersion(['10.2.3', '10.2.4', '9799770991'], '10.2.3');
+    assert.deepEqual(info, { latest: '10.2.4', bump: 'patch', newer: true });
+});
+
+test('selectLatestVersion treats partial tags as floating (digest handles them)', () => {
+    const info = selectLatestVersion(['16.1', '16.4', '18.6'], '16');
+    assert.deepEqual(info, { latest: '16.4', bump: null, newer: false });
 });
 
 test('selectLatestVersion reports up-to-date when nothing newer exists', () => {

@@ -143,6 +143,17 @@ docker compose pull
 docker compose up -d
 ```
 
+### 🏷️ Version update detection
+
+Update checks adapt to how each image is tagged:
+
+- **Floating tags** (`latest`, `stable`, `16`, `7-alpine`) - the tag itself moves, so updates are detected by comparing image **digests**.
+- **Exact pinned tags** (`1.25.3`, `7.2.4-alpine`) - compared against the newest stable release in the **same major version and variant** (e.g. `-alpine`).
+- **Digest-pinned images** (`image@sha256:...`) are never flagged.
+- Prereleases are ignored, and build-number / date-like tags (e.g. `9799770991`) are filtered out.
+
+Set `CHECK_MAJOR=true` to also flag major-version upgrades across lines (off by default).
+
 ### 🔔 Notifications
 
 Set any of the following environment variables (and keep `CHECK_INTERVAL` above 0).
