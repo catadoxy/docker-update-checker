@@ -1,24 +1,24 @@
+<p align="center">
+  <img src="assets/icon.jpg" alt="Docker Update Checker" width="420">
+</p>
+
 # 🐳 Docker Update Checker
 
-A modern, cyberpunk-themed web interface to monitor your Docker containers and check for available updates in real-time.
+A modern web interface to monitor your Docker containers and check for available updates in real-time.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Node](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen.svg)
-
-<p align="center">
-  <img src="assets/logo.jpg" alt="Docker Update Checker" width="420">
-</p>
+![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)
 
 ## ✨ Features
 
 - 🔍 **Real-time monitoring** of all running Docker containers
-- 🆕 **Update detection** by comparing local image digests against the registry
-- 🐋 **Multi-registry support** - Docker Hub, `ghcr.io`, and `lscr.io`
+- 🆕 **Update detection** - compares digests for floating tags (`latest`) *and* finds newer releases for pinned tags (`1.2.3`)
+- 🐋 **Multi-registry support** - Docker Hub, `ghcr.io`, and `lscr.io`, with auth discovered per registry
 - 🏷️ **Version display** - shows the image's real version label, plus a patch/minor/major bump type
 - 🔔 **Notifications** - ntfy, Discord, Slack, or a generic webhook when new updates appear
-- 🎨 **Theme toggle** - cyberpunk by default, with a one-click light mode
-- 📊 **Statistics dashboard** showing containers status at a glance
-- 🔄 **Auto-refresh** refresh interval can be set (0 to disable autorefresh)
+- 🎨 **Three themes** - Cyberpunk (default), Light, and Dark
+- 📊 **Statistics dashboard** showing container status at a glance
+- 🔄 **Auto-refresh** interval can be set (`0` to disable)
 - 🚀 **Fast and lightweight** - React bundled locally (no CDN or in-browser Babel), minimal Node.js backend
 - 🐋 **Docker-compatible** - works with any Docker version
 
@@ -27,20 +27,25 @@ A modern, cyberpunk-themed web interface to monitor your Docker containers and c
 The interface features:
 - Animated grid background with scanline effects
 - Glowing neon borders for containers with updates available
-- Real-time status badges
+- Real-time status badges and an update-type badge (patch / minor / major / digest)
 - Container cards with image, version, and status information
+- Separate sections for containers with updates and up-to-date containers
+- Cyberpunk, Light, and Dark themes
 - Responsive design for desktop and mobile
+
+![Interface preview](assets/preview.png)
 
 ## 🚀 Quick Start
 
 ### Prerequisites
-- Docker and Docker Compose installed
+- Docker installed
 - Access to Docker socket (`/var/run/docker.sock`)
 
-### Installation
+### Option 1: Docker Compose (Recommended)
 
 1. **Create a `docker-compose.yml` file:**
-```yaml
+
+   ```yaml
    services:
      docker-update-checker:
        image: ghcr.io/catadoxy/docker-update-checker:latest
@@ -53,39 +58,88 @@ The interface features:
        environment:
          - NODE_ENV=production
          - CHECK_INTERVAL=300  # Check every 5 minutes (300 seconds)
-```
+   ```
 
 2. **Start the container:**
-```bash
+
+   ```bash
    docker compose up -d
-```
+   ```
 
 3. **Access the interface:**
-   
+
    Open your browser and navigate to:
    - From the same machine: `http://localhost:3456`
    - From another device on your network: `http://YOUR_SERVER_IP:3456`
 
+### Option 2: Docker Run
+
+```bash
+docker run -d \
+  --name docker-update-checker \
+  -p 3456:3456 \
+  -v /var/run/docker.sock:/var/run/docker.sock:ro \
+  --restart unless-stopped \
+  -e NODE_ENV=production \
+  -e CHECK_INTERVAL=300 \
+  ghcr.io/catadoxy/docker-update-checker:latest
+```
+
+Then access the interface at `http://localhost:3456`
+
+**To stop and remove:**
+```bash
+docker stop docker-update-checker
+docker rm docker-update-checker
+```
+
+**To update to the latest version:**
+```bash
+docker stop docker-update-checker
+docker rm docker-update-checker
+docker pull ghcr.io/catadoxy/docker-update-checker:latest
+# Then run the docker run command again
+```
+
 ## 🔧 Configuration
 
 **Change the check interval:**
-Edit the `CHECK_INTERVAL` value in your docker-compose.yml:
+
+Edit the `CHECK_INTERVAL` environment variable:
 - `60` = Check every minute
 - `300` = Check every 5 minutes (default)
 - `600` = Check every 10 minutes
 - `0` = Disable auto-refresh (manual only)
 
+Docker Compose:
+```yaml
+environment:
+  - CHECK_INTERVAL=600
+```
+
+Docker Run:
+```bash
+-e CHECK_INTERVAL=600
+```
+
 **Change the port:**
 
-Modify the port mapping in docker-compose.yml:
+Docker Compose - modify the port mapping:
 ```yaml
 ports:
   - "8080:3456"  # Use port 8080 instead of 3456
 ```
 
-Then restart:
+Docker Run - change the `-p` flag:
 ```bash
-docker compose down
+-p 8080:3456
+```
+
+Then restart the container and access it at `http://localhost:8080`
+
+**Updating (Docker Compose):**
+```bash
+docker compose pull
 docker compose up -d
 ```
 
@@ -122,66 +176,21 @@ The generic webhook receives:
 
 De-duplication is in memory, so restarting the container may re-send the current set once.
 
-## 🐛 Troubleshooting
+## 🛠️ Development
 
-### "Failed to connect to Docker"
-
-- Ensure Docker is running: `docker ps`
-- Check Docker socket permissions: `ls -l /var/run/docker.sock`
-- On Linux, you may need to add your user to the docker group: `sudo usermod -aG docker $USER`
-
-### "No containers detected"
-
-- Make sure you have running containers: `docker ps`
-- Check that the backend can access Docker: `curl http://localhost:3456/api/health`
-
-### Update detection not working
-
-- Private registries requiring authentication are not yet supported
-- Supported public registries: Docker Hub, `ghcr.io`, `lscr.io`
-- Images without tags or with SHA digests may show as "unknown"
-- Digest comparison can differ for multi-architecture images
-
-## 🔒 Security Notes
-
-- This tool requires access to the Docker socket, which provides root-level access
-- Only run this on trusted networks or localhost
-- Do not expose the API port (3456) to the internet without proper authentication
-- Consider using Docker socket proxy for production deployments
-
-## 🏗️ Architecture
-
-```
-┌─────────────────────┐
-│   Web Browser       │
-│  (React Frontend)   │
-└──────────┬──────────┘
-           │
-           │ HTTP/REST
-           │
-┌──────────▼──────────┐
-│   Node.js Server    │
-│   (Express API)     │
-└──────────┬──────────┘
-           │
-           │ Docker SDK
-           │
-┌──────────▼──────────┐     ┌─────────────────┐
-│   Docker Socket     │────▶│ Container       │
-│  /var/run/docker    │     │ Registry API    │
-└─────────────────────┘     └─────────────────┘
+```bash
+npm install      # install dependencies
+npm run build    # bundle the React frontend into app.js
+npm test         # run the unit tests (node:test, no network needed)
+npm start        # start the backend on http://localhost:3456
 ```
 
-## 🤝 How It Works
+`app.js` is a build artifact and is not committed; the Docker build generates it
+in a separate esbuild stage. Use `npm run dev` to rebuild and run with nodemon.
 
-1. **Backend** connects to Docker via `/var/run/docker.sock`
-2. Lists all running containers using Docker API
-3. For each container:
-   - Extracts image name and tag
-   - Gets the current image digest (SHA)
-   - Queries the registry for the digest and highest version tag
-   - Compares digests to determine if an update is available
-4. **Frontend** polls the API at the configured `CHECK_INTERVAL` and displays results
+The backend is split into small modules so the update logic can be tested without
+Docker or network access: `version.js` (tag parsing/comparison), `registry.js`
+(auth discovery, digests, tags, caching), and `notify.js` (notification channels).
 
 ## 📁 Project Structure
 
@@ -197,11 +206,11 @@ docker-update-checker/
 │   └── app.jsx                   # React app source (bundled to app.js by esbuild)
 ├── test/
 │   ├── version.test.js
-│   └── registry.test.js
+│   ├── registry.test.js
+│   └── notify.test.js
 ├── docs/
-│   ├── README.md
-│   ├── CHECK_INTERVAL_GUIDE.md
-│   └── assets/logo.jpg
+│   └── CHECK_INTERVAL_GUIDE.md
+├── assets/                       # icon + interface preview
 ├── scripts/
 │   └── setup-docker-compose.sh   # Automated Docker Compose setup
 ├── .github/workflows/            # CI + GitHub Container Registry publish
@@ -210,22 +219,6 @@ docker-update-checker/
 ├── docker-compose.yml
 └── package.json
 ```
-
-## 🛠️ Development
-
-```bash
-npm install      # install dependencies
-npm run build    # bundle the React frontend into app.js
-npm test         # run the unit tests (node:test, no network needed)
-npm start        # start the backend on http://localhost:3456
-```
-
-`app.js` is a build artifact and is not committed; the Docker build generates it
-in a separate esbuild stage. Use `npm run dev` to rebuild and run with nodemon.
-
-The backend is split into small modules so the update logic can be tested without
-Docker or network access: `version.js` (tag parsing/comparison) and `registry.js`
-(auth discovery, digests, tags, caching).
 
 ## 📦 Releasing
 
@@ -257,6 +250,69 @@ cd docker-update-checker
 docker compose up -d --build
 ```
 
+## 🏗️ Architecture
+
+```
+┌─────────────────────┐
+│   Web Browser       │
+│  (React Frontend)   │
+└──────────┬──────────┘
+           │
+           │ HTTP/REST
+           │
+┌──────────▼──────────┐
+│   Node.js Server    │
+│   (Express API)     │
+└──────────┬──────────┘
+           │
+           │ Docker SDK
+           │
+┌──────────▼──────────┐     ┌──────────────────────┐
+│   Docker Socket     │────▶│  Container Registries │
+│  /var/run/docker    │     │  Docker Hub, ghcr.io  │
+└─────────────────────┘     │  lscr.io, and more   │
+                            └──────────────────────┘
+```
+
+## 🤝 How It Works
+
+1. **Backend** connects to Docker via `/var/run/docker.sock`
+2. Lists all running containers using the Docker API
+3. For each container:
+   - Detects the registry (Docker Hub, ghcr.io, lscr.io) and discovers its auth endpoint
+   - Gets the current image digest (SHA) and version label
+   - For floating tags (`latest`), compares the local and remote digests
+   - For version tags, finds the newest stable release in the same variant and reports the bump type
+   - Ignores prereleases and unrelated variants (e.g. `-alpine`)
+4. **Frontend** polls the API at the configured interval and displays results
+
+## 🐛 Troubleshooting
+
+### "Failed to connect to Docker"
+
+- Ensure Docker is running: `docker ps`
+- Check Docker socket permissions: `ls -l /var/run/docker.sock`
+- On Linux, you may need to add your user to the docker group: `sudo usermod -aG docker $USER`
+
+### "No containers detected"
+
+- Make sure you have running containers: `docker ps`
+- Check that the backend can access Docker: `curl http://localhost:3456/api/health`
+
+### Update detection not working
+
+- Private registries requiring authentication are not yet supported
+- Supported public registries: Docker Hub, `ghcr.io`, `lscr.io`
+- Images without tags or with SHA digests may show as "unknown"
+- Digest comparison can differ for multi-architecture images
+
+## 🔒 Security Notes
+
+- This tool requires access to the Docker socket, which provides root-level access
+- Only run this on trusted networks or localhost
+- Do not expose port 3456 to the internet without proper authentication
+- Consider using Docker socket proxy for production deployments
+
 ## 📝 License
 
 MIT License - feel free to use this for personal or commercial projects!
@@ -267,6 +323,7 @@ Built with:
 - [Express](https://expressjs.com/) - Fast, minimalist web framework
 - [Dockerode](https://github.com/apocas/dockerode) - Docker API client
 - [React](https://reactjs.org/) - UI library
+- [esbuild](https://esbuild.github.io/) - Frontend bundler
 - [Axios](https://axios-http.com/) - HTTP client
 
 Fonts:
@@ -285,6 +342,7 @@ Fonts:
 
 - [x] Multi-registry support (Docker Hub, ghcr.io, lscr.io)
 - [x] Notifications (ntfy, Discord, Slack, generic webhook)
+- [x] Multiple themes (Cyberpunk, Light, Dark)
 - [ ] Support for private registries
 - [ ] Authentication for private images
 - [ ] Container restart/update actions
