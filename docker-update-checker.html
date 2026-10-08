@@ -75,26 +75,28 @@
 
         :root[data-theme="cyberpunk"] {
             color-scheme: dark;
-            --bg: #060911;
-            --surface: #0b1220;
-            --surface-2: #0a0f1b;
-            --border: #182642;
-            --border-strong: #23375f;
-            --ink: #d9e6f5;
-            --ink-2: #a9bdd6;
-            --muted: #6f88a8;
-            --accent: #22d3ee;
-            --accent-ink: #04121a;
-            --accent-soft: rgba(34, 211, 238, 0.12);
-            --update: #fb923c;
-            --update-soft: rgba(251, 146, 60, 0.12);
-            --update-border: rgba(251, 146, 60, 0.34);
-            --ok: #34d399;
-            --ok-soft: rgba(52, 211, 153, 0.12);
-            --ok-border: rgba(52, 211, 153, 0.3);
-            --danger: #fb7185;
-            --danger-soft: rgba(251, 113, 133, 0.12);
-            --shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            --bg: #04070f;
+            --surface: #0a1020;
+            --surface-2: #070c17;
+            --border: #1b2b4d;
+            --border-strong: #2c4a80;
+            --ink: #e2edff;
+            --ink-2: #a6c2e8;
+            --muted: #6f8cba;
+            --accent: #22e0ff;
+            --accent-ink: #03121a;
+            --accent-soft: rgba(34, 224, 255, 0.14);
+            --accent-2: #ff2bd6;
+            --accent-2-soft: rgba(255, 43, 214, 0.14);
+            --update: #ffb020;
+            --update-soft: rgba(255, 176, 32, 0.14);
+            --update-border: rgba(255, 176, 32, 0.45);
+            --ok: #2ff0a8;
+            --ok-soft: rgba(47, 240, 168, 0.12);
+            --ok-border: rgba(47, 240, 168, 0.34);
+            --danger: #ff5470;
+            --danger-soft: rgba(255, 84, 112, 0.14);
+            --shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
         }
 
         /* ─── Base ──────────────────────────────────────────────────────────── */
@@ -167,7 +169,7 @@
             min-height: 100vh;
         }
 
-        /* Subtle grid, cyberpunk theme only */
+        /* Neon grid, cyberpunk theme only */
         :root[data-theme="cyberpunk"] body::before {
             content: '';
             position: fixed;
@@ -175,11 +177,13 @@
             z-index: 0;
             pointer-events: none;
             background-image:
-                linear-gradient(rgba(34, 211, 238, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(34, 211, 238, 0.05) 1px, transparent 1px);
-            background-size: 44px 44px;
-            -webkit-mask-image: radial-gradient(ellipse at 50% 0%, #000 0%, transparent 72%);
-            mask-image: radial-gradient(ellipse at 50% 0%, #000 0%, transparent 72%);
+                linear-gradient(rgba(34, 224, 255, 0.09) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(34, 224, 255, 0.09) 1px, transparent 1px),
+                linear-gradient(rgba(255, 43, 214, 0.06) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 43, 214, 0.06) 1px, transparent 1px);
+            background-size: 44px 44px, 44px 44px, 88px 88px, 88px 88px;
+            -webkit-mask-image: radial-gradient(ellipse at 50% 0%, #000 0%, transparent 78%);
+            mask-image: radial-gradient(ellipse at 50% 0%, #000 0%, transparent 78%);
         }
 
         /* ─── App bar ───────────────────────────────────────────────────────── */
@@ -653,6 +657,52 @@
             to {
                 transform: rotate(360deg);
             }
+        }
+
+        /* ─── Cyberpunk neon accents ────────────────────────────────────────── */
+        :root[data-theme="cyberpunk"] .mark {
+            background: linear-gradient(135deg, rgba(34, 224, 255, 0.2), rgba(255, 43, 214, 0.2));
+            color: var(--accent);
+            box-shadow: 0 0 0 1px rgba(34, 224, 255, 0.4), 0 0 18px rgba(34, 224, 255, 0.35);
+        }
+
+        :root[data-theme="cyberpunk"] .brand-name {
+            text-shadow: 0 0 14px rgba(34, 224, 255, 0.5);
+        }
+
+        :root[data-theme="cyberpunk"] .appbar {
+            border-bottom-color: rgba(34, 224, 255, 0.35);
+            box-shadow: 0 1px 0 rgba(34, 224, 255, 0.12), 0 12px 30px -22px rgba(34, 224, 255, 0.7);
+        }
+
+        :root[data-theme="cyberpunk"] .btn-primary {
+            box-shadow: 0 0 18px rgba(34, 224, 255, 0.4);
+        }
+
+        :root[data-theme="cyberpunk"] .btn-primary:hover {
+            box-shadow: 0 0 24px rgba(34, 224, 255, 0.6);
+        }
+
+        :root[data-theme="cyberpunk"] .seg-btn[aria-pressed="true"] {
+            color: var(--accent);
+            box-shadow: 0 0 0 1px rgba(255, 43, 214, 0.5), 0 0 14px rgba(255, 43, 214, 0.35);
+        }
+
+        :root[data-theme="cyberpunk"] .section-updates .section-title {
+            text-shadow: 0 0 12px rgba(255, 176, 32, 0.45);
+        }
+
+        :root[data-theme="cyberpunk"] .card-update {
+            border-color: var(--update-border);
+            box-shadow: inset 3px 0 0 var(--update), 0 0 0 1px rgba(255, 43, 214, 0.16);
+        }
+
+        :root[data-theme="cyberpunk"] .pill-update {
+            box-shadow: 0 0 12px rgba(255, 176, 32, 0.3);
+        }
+
+        :root[data-theme="cyberpunk"] .pill-ok {
+            box-shadow: 0 0 12px rgba(47, 240, 168, 0.25);
         }
 
         /* ─── Responsive ────────────────────────────────────────────────────── */

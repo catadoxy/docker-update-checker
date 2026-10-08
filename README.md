@@ -33,7 +33,7 @@ A focused, single-page dashboard:
 - A filter box to search containers by name or image
 - Separate **Updates Available** and **Up to Date** sections
 - Each card shows the image, the `current → latest` version, the bump type (patch / minor / major), and the container status
-- Three themes: Dark (default), Light, and Cyberpunk
+- Three themes: Dark (default), Light, and Cyberpunk (neon cyan/magenta accents)
 - Responsive from mobile to desktop
 
 **Dark**
@@ -43,6 +43,10 @@ A focused, single-page dashboard:
 **Light**
 
 ![Interface preview - light](assets/preview-light.png)
+
+**Cyberpunk**
+
+![Interface preview - cyberpunk](assets/preview-cyberpunk.png)
 
 ## 🚀 Quick Start
 
