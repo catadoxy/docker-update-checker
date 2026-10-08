@@ -4,10 +4,11 @@
 
 # 🐳 Docker Update Checker
 
-A modern web interface to monitor your Docker containers and check for available updates in real-time.
+A clean, self-hosted dashboard to monitor your Docker containers and see which images have updates available.
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 ![Node](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen.svg)
+![CI](https://github.com/catadoxy/docker-update-checker/actions/workflows/ci.yml/badge.svg)
 
 ## ✨ Features
 
@@ -17,23 +18,31 @@ A modern web interface to monitor your Docker containers and check for available
 - 🏷️ **Version display** - shows the image's real version label, plus a patch/minor/major bump type
 - 🔔 **Notifications** - ntfy, Discord, Slack, or a generic webhook when new updates appear
 - 🎨 **Three themes** - Dark (default), Light, and Cyberpunk
-- 📊 **Statistics dashboard** showing container status at a glance
+- 📊 **Summary dashboard** - container counts and status at a glance
+- 🔎 **Filter** - search containers by name or image
 - 🔄 **Auto-refresh** interval can be set (`0` to disable)
 - 🚀 **Fast and lightweight** - React bundled locally (no CDN or in-browser Babel), minimal Node.js backend
 - 🐋 **Docker-compatible** - works with any Docker version
 
 ## 🖼️ Interface
 
-The interface features:
-- Animated grid background with scanline effects
-- Glowing neon borders for containers with updates available
-- Real-time status badges and an update-type badge (patch / minor / major / digest)
-- Container cards with image, version, and status information
-- Separate sections for containers with updates and up-to-date containers
-- Cyberpunk, Light, and Dark themes
-- Responsive design for desktop and mobile
+A focused, single-page dashboard:
 
-![Interface preview](assets/preview.png)
+- Sticky header with the refresh control, auto-refresh status, and a theme switcher
+- Summary tiles for containers, available updates, and up-to-date images
+- A filter box to search containers by name or image
+- Separate **Updates Available** and **Up to Date** sections
+- Each card shows the image, the `current → latest` version, the bump type (patch / minor / major), and the container status
+- Three themes: Dark (default), Light, and Cyberpunk
+- Responsive from mobile to desktop
+
+**Dark**
+
+![Interface preview - dark](assets/preview.png)
+
+**Light**
+
+![Interface preview - light](assets/preview-light.png)
 
 ## 🚀 Quick Start
 
@@ -236,12 +245,12 @@ docker-update-checker/
 Releases are automated with GitHub Actions (`.github/workflows/publish.yml`):
 
 ```bash
-git tag v1.1.0
+git tag v1.2.0
 git push --tags
 ```
 
 Pushing a `v*` tag runs the tests, builds the image, and pushes
-`ghcr.io/catadoxy/docker-update-checker:v1.1.0` (+ `:latest`) to the GitHub
+`ghcr.io/catadoxy/docker-update-checker:v1.2.0` (+ `:latest`) to the GitHub
 Container Registry. It authenticates with the built-in `GITHUB_TOKEN`, so **no
 repository secrets are needed**. You can also trigger it manually from the Actions
 tab (`workflow_dispatch`).
@@ -293,7 +302,7 @@ docker compose up -d --build
    - Detects the registry (Docker Hub, ghcr.io, lscr.io) and discovers its auth endpoint
    - Gets the current image digest (SHA) and version label
    - For floating tags (`latest`), compares the local and remote digests
-   - For version tags, finds the newest stable release in the same variant and reports the bump type
+   - For version tags, finds the newest stable release in the same major version and variant and reports the bump type
    - Ignores prereleases and unrelated variants (e.g. `-alpine`)
 4. **Frontend** polls the API at the configured interval and displays results
 
@@ -338,8 +347,8 @@ Built with:
 - [Axios](https://axios-http.com/) - HTTP client
 
 Fonts:
-- [JetBrains Mono](https://www.jetbrains.com/lp/mono/) - Monospace font
-- [Orbitron](https://fonts.google.com/specimen/Orbitron) - Display font
+- [Inter](https://fonts.google.com/specimen/Inter) - UI text
+- [JetBrains Mono](https://www.jetbrains.com/lp/mono/) - Image tags and versions
 
 ## 🐛 Known Issues
 
@@ -354,11 +363,11 @@ Fonts:
 - [x] Multi-registry support (Docker Hub, ghcr.io, lscr.io)
 - [x] Notifications (ntfy, Discord, Slack, generic webhook)
 - [x] Multiple themes (Cyberpunk, Light, Dark)
+- [x] Filter and search capabilities
 - [ ] Support for private registries
 - [ ] Authentication for private images
 - [ ] Container restart/update actions
 - [ ] Export reports
-- [ ] Filter and search capabilities
 - [ ] Email notifications
 
 ## 💬 Feedback
