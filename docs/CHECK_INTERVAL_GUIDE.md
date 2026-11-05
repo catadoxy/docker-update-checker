@@ -6,7 +6,9 @@ This guide explains how to configure how often the Docker Update Checker scans f
 
 By default, the app checks for updates every **5 minutes (300 seconds)**. You can customize this using the `CHECK_INTERVAL` environment variable in your `docker-compose.yml` file.
 
-**Special value**: Set `CHECK_INTERVAL=0` to **disable auto-refresh** completely. The app will only check for updates when you manually click the "Refresh Status" button.
+**Special value**: Set `CHECK_INTERVAL=0` to **disable automatic checks** completely. The app will only check for updates when you manually click the "Refresh" button.
+
+Opening or reloading the web page never triggers a registry check. The page shows the result of the last scan, so only the Refresh button and the configured interval cause new checks.
 
 **Installation**: This guide assumes you're using the published image `ghcr.io/catadoxy/docker-update-checker:latest`. If you're building from source, see Method 3 below.
 
@@ -93,9 +95,11 @@ docker compose up -d
 ## 🔍 How It Works
 
 1. **Backend**: Reads `CHECK_INTERVAL` environment variable (default: 300 seconds)
-2. **API**: Exposes this value via `/api/config` endpoint
-3. **Frontend**: Fetches the interval and auto-refreshes accordingly
-4. **Display**: Shows the interval in the UI header
+2. **Scheduled scans**: When the interval is greater than zero, the backend scans on that schedule and caches the result
+3. **Page loads**: `GET /api/containers` only returns the cached result - it never contacts Docker Hub, GHCR, or any other registry
+4. **Refresh button**: Calls `POST /api/scan` to run an immediate check
+5. **API**: Exposes the interval via `/api/config` endpoint
+6. **Display**: Shows the interval and the time of the last completed scan in the UI header
 
 ## ⚠️ Important Considerations
 
@@ -175,12 +179,12 @@ curl http://localhost:3456/api/config
 
 Open the interface in your browser. The header should show:
 ```
-Auto-refresh: every 300 seconds (5.0 min)
+Checks every 300s
 ```
 
 Or if disabled:
 ```
-Auto-refresh: DISABLED (manual only)
+Manual refresh only
 ```
 
 ## 🎯 Real-World Examples
@@ -244,7 +248,7 @@ environment:
   - CHECK_INTERVAL=0  # Disable auto-refresh
 ```
 
-Users must click "Refresh Status" to check for updates. Perfect for:
+Users must click "Refresh" to check for updates. Perfect for:
 - Environments where updates are checked during maintenance windows
 - Avoiding any Docker Hub rate limits
 - Minimal resource usage
@@ -338,4 +342,4 @@ Unfortunately Docker Hub doesn't provide an easy way to check your current rate 
 
 ---
 
-**Remember:** You can always manually refresh using the "Refresh Status" button in the web interface, regardless of the auto-refresh interval! 🔄
+**Remember:** You can always manually refresh using the "Refresh" button in the web interface, regardless of the auto-refresh interval! Reloading the page alone never triggers a registry check. 🔄

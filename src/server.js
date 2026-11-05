@@ -87,18 +87,71 @@ async function scanContainers() {
     );
 }
 
+// ─── Scan cache ───────────────────────────────────────────────────────────────
+// A scan contacts remote registries, so it must only run when the user presses
+// Refresh or when CHECK_INTERVAL schedules it. Opening or reloading the page
+// reads the cached result instead.
+
+let lastScan = null;          // { containers, timestamp } of the last completed scan
+let scanPromise = null;       // de-duplicates concurrent scan requests
+let knownUpdateKeys = new Set(); // updates already notified about
+
+async function runScan() {
+    const containers = await scanContainers();
+    lastScan = {
+        containers,
+        timestamp: new Date().toISOString(),
+    };
+
+    // Remember which updates have been seen so notifications only fire once,
+    // no matter whether the scan came from the scheduler or the Refresh button.
+    const { fresh, nextKeys } = diffUpdates(knownUpdateKeys, containers);
+    knownUpdateKeys = nextKeys;
+
+    return { scan: lastScan, fresh };
+}
+
+function triggerScan() {
+    if (!scanPromise) {
+        scanPromise = runScan().finally(() => {
+            scanPromise = null;
+        });
+    }
+    return scanPromise;
+}
+
+function cachedResponse() {
+    return {
+        success: true,
+        containers: lastScan ? lastScan.containers : [],
+        timestamp: lastScan ? lastScan.timestamp : null,
+        hasData: Boolean(lastScan),
+        scanning: Boolean(scanPromise),
+        cached: true,
+    };
+}
+
 // ─── API Routes ───────────────────────────────────────────────────────────────
 
-app.get('/api/containers', async (req, res) => {
+// Cached result only - this endpoint never contacts a registry.
+app.get('/api/containers', (req, res) => {
+    res.json(cachedResponse());
+});
+
+// Explicit scan, triggered by the Refresh button.
+app.post('/api/scan', async (req, res) => {
     try {
-        const containers = await scanContainers();
+        const { scan } = await triggerScan();
         res.json({
             success: true,
-            containers,
-            timestamp: new Date().toISOString(),
+            containers: scan.containers,
+            timestamp: scan.timestamp,
+            hasData: true,
+            scanning: false,
+            cached: false,
         });
     } catch (error) {
-        console.error('Error fetching containers:', error);
+        console.error('Error scanning containers:', error);
         res.status(500).json({
             error: error.message,
             details: 'Failed to connect to Docker. Make sure Docker is running and accessible.',
@@ -161,9 +214,10 @@ app.get('/app.js', (req, res) => {
 app.get('/api', (req, res) => {
     res.json({
         name: 'Docker Update Checker API',
-        version: '1.2.1',
+        version: '1.3.0',
         endpoints: {
-            containers: '/api/containers',
+            containers: '/api/containers (cached)',
+            scan: '/api/scan (POST, triggers a scan)',
             config: '/api/config',
             health: '/api/health',
         },
@@ -180,18 +234,14 @@ if (process.env.CHECK_INTERVAL !== undefined) {
     if (!isNaN(parsed) && parsed >= 0) CHECK_INTERVAL = parsed;
 }
 
-// Background scans drive notifications, so they only run when auto-refresh is
-// enabled. Keys of already-notified updates are remembered to avoid spamming.
+// Background scans keep the cache fresh and drive notifications when enabled.
 const notifyConfig = getNotifyConfig();
-let knownUpdateKeys = new Set();
 
 async function scheduledScan() {
     try {
-        const containers = await scanContainers();
-        const { fresh, nextKeys } = diffUpdates(knownUpdateKeys, containers);
-        knownUpdateKeys = nextKeys;
+        const { fresh } = await triggerScan();
 
-        if (fresh.length > 0) {
+        if (notifyConfig.enabled && fresh.length > 0) {
             console.log(`🔔 ${fresh.length} new update(s) - sending notifications`);
             await sendNotifications(fresh, notifyConfig);
         }
@@ -217,14 +267,18 @@ app.listen(PORT, () => {
 
     if (notifyConfig.enabled) {
         console.log(`🔔 Notifications: ${notifyConfig.channels.join(', ')}`);
-        if (CHECK_INTERVAL > 0) {
-            const initial = setTimeout(scheduledScan, 5000);
-            const interval = setInterval(scheduledScan, CHECK_INTERVAL * 1000);
-            initial.unref?.();
-            interval.unref?.();
-        } else {
+        if (CHECK_INTERVAL === 0) {
             console.log('   (set CHECK_INTERVAL > 0 to enable background notifications)');
         }
+    }
+
+    // Scans run on the configured interval only. With CHECK_INTERVAL=0 the
+    // first scan happens when someone presses Refresh.
+    if (CHECK_INTERVAL > 0) {
+        const initial = setTimeout(scheduledScan, 5000);
+        const interval = setInterval(scheduledScan, CHECK_INTERVAL * 1000);
+        initial.unref?.();
+        interval.unref?.();
     }
 
     console.log(`\n💡 Open your browser at http://localhost:${PORT}\n`);

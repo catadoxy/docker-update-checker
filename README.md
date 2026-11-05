@@ -17,7 +17,8 @@ A clean, self-hosted dashboard that shows which of your running Docker container
 - 🐋 Docker Hub, `ghcr.io`, and `lscr.io` (auth discovered automatically)
 - 🔔 Notifications via ntfy, Discord, Slack, or a generic webhook
 - 🎨 Dark, Light, and Cyberpunk themes
-- 🔎 Filter, auto-refresh, and a locally bundled React frontend (no CDN, works offline)
+- 🔎 Filter, scheduled scans, and a locally bundled React frontend (no CDN, works offline)
+- 🔋 Page loads read cached results - registry checks only happen on Refresh or per `CHECK_INTERVAL`
 
 ## 🖼️ Screenshots
 
@@ -63,7 +64,7 @@ docker run -d --name docker-update-checker -p 3456:3456 \
 
 | Variable | Default | Description |
 |---|---|---|
-| `CHECK_INTERVAL` | `300` | Seconds between scans (`0` disables auto-refresh) |
+| `CHECK_INTERVAL` | `300` | Seconds between scans (`0` = only scan when Refresh is pressed) |
 | `CHECK_MAJOR` | `false` | Also flag major-version upgrades |
 | `PORT` | `3456` | HTTP port |
 

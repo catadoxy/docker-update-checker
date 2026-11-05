@@ -127,6 +127,8 @@ const MARK = (
 function App() {
     const [containers, setContainers] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [initialLoading, setInitialLoading] = useState(true);
+    const [hasData, setHasData] = useState(false);
     const [error, setError] = useState(null);
     const [endpoint] = useState(window.location.origin);
     const [checkInterval, setCheckInterval] = useState(null);
@@ -146,10 +148,8 @@ function App() {
         }
     }, [theme]);
 
-    const fetchContainers = async () => {
-        setLoading(true);
-        setError(null);
-
+    // Read the result of the last scan. This never contacts a registry.
+    const loadCached = async () => {
         try {
             const response = await fetch(`${endpoint}/api/containers`);
             if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -158,9 +158,32 @@ function App() {
             if (data.error) throw new Error(data.error);
 
             setContainers(data.containers || []);
-            setLastUpdated(data.timestamp || new Date().toISOString());
+            setHasData(Boolean(data.hasData));
+            if (data.timestamp) setLastUpdated(data.timestamp);
+            setError(null);
         } catch (err) {
             console.error('Fetch error:', err);
+            setError(err.message);
+        }
+    };
+
+    // Explicit scan, only triggered by the Refresh button.
+    const refresh = async () => {
+        setLoading(true);
+        setError(null);
+
+        try {
+            const response = await fetch(`${endpoint}/api/scan`, { method: 'POST' });
+            if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+
+            const data = await response.json();
+            if (data.error) throw new Error(data.error);
+
+            setContainers(data.containers || []);
+            setHasData(true);
+            setLastUpdated(data.timestamp || new Date().toISOString());
+        } catch (err) {
+            console.error('Scan error:', err);
             setError(err.message);
         } finally {
             setLoading(false);
@@ -182,17 +205,23 @@ function App() {
                 setCheckInterval(300);
             }
             setConfigLoaded(true);
-            await fetchContainers();
+            await loadCached();
+            setInitialLoading(false);
         };
 
         init();
     }, [endpoint]);
 
+    // The server scans on CHECK_INTERVAL. The page only re-reads the cached
+    // result, so leaving a tab open never causes extra registry requests.
+    // Until the first result arrives, poll a little faster to pick up the
+    // startup scan promptly.
     useEffect(() => {
-        if (!configLoaded || checkInterval === null || checkInterval === 0) return;
-        const interval = setInterval(fetchContainers, checkInterval * 1000);
+        if (!configLoaded || !checkInterval || checkInterval <= 0) return;
+        const pollMs = hasData ? Math.min(checkInterval * 1000, 30000) : 5000;
+        const interval = setInterval(loadCached, pollMs);
         return () => clearInterval(interval);
-    }, [checkInterval, configLoaded, endpoint]);
+    }, [checkInterval, configLoaded, endpoint, hasData]);
 
     const q = query.trim().toLowerCase();
     const matches = (c) =>
@@ -209,8 +238,8 @@ function App() {
         checkInterval === null
             ? 'Loading…'
             : checkInterval === 0
-              ? 'Auto-refresh off'
-              : `Auto-refresh every ${checkInterval}s`;
+              ? 'Manual refresh only'
+              : `Checks every ${checkInterval}s`;
 
     return (
         <div className="shell">
@@ -239,7 +268,7 @@ function App() {
                         <button
                             type="button"
                             className="btn btn-primary"
-                            onClick={fetchContainers}
+                            onClick={refresh}
                             disabled={loading}
                         >
                             {loading ? 'Scanning…' : 'Refresh'}
@@ -249,20 +278,22 @@ function App() {
             </header>
 
             <main className="main" id="main">
-                <section className="stats" aria-label="Summary">
-                    <div className="stat">
-                        <span className="stat-num">{containers.length}</span>
-                        <span className="stat-label">Containers</span>
-                    </div>
-                    <div className={`stat${totalUpdates > 0 ? ' stat-updates' : ''}`}>
-                        <span className="stat-num">{totalUpdates}</span>
-                        <span className="stat-label">Updates available</span>
-                    </div>
-                    <div className="stat">
-                        <span className="stat-num">{containers.length - totalUpdates}</span>
-                        <span className="stat-label">Up to date</span>
-                    </div>
-                </section>
+                {(hasData || loading) && (
+                    <section className="stats" aria-label="Summary">
+                        <div className="stat">
+                            <span className="stat-num">{containers.length}</span>
+                            <span className="stat-label">Containers</span>
+                        </div>
+                        <div className={`stat${totalUpdates > 0 ? ' stat-updates' : ''}`}>
+                            <span className="stat-num">{totalUpdates}</span>
+                            <span className="stat-label">Updates available</span>
+                        </div>
+                        <div className="stat">
+                            <span className="stat-num">{containers.length - totalUpdates}</span>
+                            <span className="stat-label">Up to date</span>
+                        </div>
+                    </section>
+                )}
 
                 {containers.length > 0 && (
                     <div className="toolbar">
@@ -318,7 +349,19 @@ function App() {
                     </div>
                 )}
 
-                {!loading && !error && containers.length === 0 && (
+                {!loading && !error && !initialLoading && !hasData && (
+                    <div className="state">
+                        <span className="state-emoji" aria-hidden="true">
+                            🐳
+                        </span>
+                        <p className="state-title">No scan yet</p>
+                        <p className="state-text">
+                            Press Refresh to check your containers for updates.
+                        </p>
+                    </div>
+                )}
+
+                {!loading && !error && hasData && containers.length === 0 && (
                     <div className="state">
                         <span className="state-emoji" aria-hidden="true">
                             🐳

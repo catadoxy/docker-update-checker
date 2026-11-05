@@ -11,7 +11,8 @@ services:
     environment:
       - NODE_ENV=production
       # Check interval in seconds (default: 300 = 5 minutes)
-      # Set to 0 to disable auto-refresh (manual refresh only)
+      # Set to 0 to scan only when the Refresh button is pressed
+      # Opening/reloading the page never triggers a scan
       # Minimum recommended: 60 seconds to avoid overwhelming Docker Hub API
       - CHECK_INTERVAL=0
       # ── Notifications (optional) ─────────────────────────────────────────
